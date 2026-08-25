@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Koffie in Rotterdam — 10 tips voor het centrum</title>
+<title>Koffie in Rotterdam — kaart & 10 tips</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -18,6 +18,9 @@
     --terracotta:#c56b46;
     --terracotta-dark:#a9542f;
     --gold:#d9a441;
+    --water:#cfe0dc;
+    --land:#f0e7d9;
+    --street:#e5d8c5;
     --line:rgba(92,61,44,.14);
     --shadow:0 1px 2px rgba(60,40,25,.06),0 8px 24px rgba(60,40,25,.08);
     --shadow-hover:0 4px 10px rgba(60,40,25,.10),0 18px 40px rgba(60,40,25,.16);
@@ -33,11 +36,12 @@
     font-family:"Inter",system-ui,sans-serif;
     line-height:1.5;
     -webkit-font-smoothing:antialiased;
+    min-height:100vh;
   }
   .wrap{max-width:1080px;margin:0 auto;padding:0 22px}
 
   /* ---------- header ---------- */
-  header{padding:64px 0 12px;text-align:center}
+  header{padding:60px 0 8px;text-align:center}
   .kicker{
     display:inline-block;
     font-weight:600;letter-spacing:.18em;text-transform:uppercase;
@@ -49,31 +53,72 @@
     font-family:"Fraunces",Georgia,serif;
     font-weight:600;
     font-size:clamp(2.2rem,6vw,3.6rem);
-    line-height:1.02;letter-spacing:-.02em;
+    line-height:1.02;letter-spacing:-.02em;text-wrap:balance;
     margin:0 0 14px;
   }
   h1 .accent{color:var(--terracotta)}
-  .lede{
-    max-width:560px;margin:0 auto;
-    color:var(--muted);font-size:1.05rem;
-  }
+  .lede{max-width:580px;margin:0 auto;color:var(--muted);font-size:1.05rem}
   .steam{font-size:2.2rem;line-height:1;display:block;margin-bottom:10px}
+
+  /* ---------- map ---------- */
+  .map-section{padding:38px 0 8px}
+  .map-frame{
+    position:relative;
+    background:var(--land);
+    border:1px solid var(--line);
+    border-radius:20px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .map-frame svg{display:block;width:100%;height:auto}
+
+  /* map base graphics */
+  .m-water{fill:var(--water)}
+  .m-street{stroke:var(--street);stroke-linecap:round;fill:none}
+  .m-street.major{stroke-width:9}
+  .m-street.minor{stroke-width:5}
+  .m-label{fill:var(--muted);font-family:"Inter",sans-serif;font-weight:600;font-size:13px;letter-spacing:.02em}
+  .m-label.water{fill:#7fa39b}
+  .m-poi{fill:var(--brown);font-family:"Inter",sans-serif;font-weight:600;font-size:12px}
+
+  /* pins */
+  .pin{cursor:pointer}
+  .pin .disc{
+    fill:var(--terracotta);
+    stroke:#fff;stroke-width:2.5;
+    transition:fill .18s ease, r .18s ease;
+  }
+  .pin .cup{font-size:15px;pointer-events:none}
+  .pin .pnum{
+    fill:#fff;font-family:"Inter",sans-serif;font-weight:700;font-size:13px;
+    text-anchor:middle;pointer-events:none;
+  }
+  .pin:hover .disc,.pin.active .disc{fill:var(--terracotta-dark)}
+  .pin.active .disc{r:20}
+  .pin .halo{fill:var(--terracotta);opacity:0;transition:opacity .18s ease}
+  .pin.active .halo{opacity:.16}
+  .pin:focus{outline:none}
+  .pin:focus-visible .disc{stroke:var(--gold);stroke-width:4}
+
+  .map-note{
+    text-align:center;color:var(--muted);font-size:.8rem;
+    padding:12px 6px 0;
+  }
 
   /* ---------- grid ---------- */
   .grid{
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
     gap:20px;
-    padding:44px 0 24px;
+    padding:30px 0 24px;
   }
   .card{
-    position:relative;
+    position:relative;scroll-margin-top:16px;
     display:flex;flex-direction:column;
     background:var(--card);
     border:1px solid var(--line);
     border-radius:18px;
-    padding:22px 22px 20px;
-    text-decoration:none;color:inherit;
+    padding:22px 22px 18px;
     box-shadow:var(--shadow);
     transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease;
     overflow:hidden;
@@ -83,22 +128,15 @@
     background:linear-gradient(var(--terracotta),var(--gold));
     opacity:0;transition:opacity .22s ease;
   }
-  .card:hover{
-    transform:translateY(-4px);
-    box-shadow:var(--shadow-hover);
-    border-color:rgba(197,107,70,.35);
-  }
-  .card:hover::before{opacity:1}
-  .card:focus-visible{outline:3px solid var(--terracotta);outline-offset:3px}
+  .card:hover,.card.active{transform:translateY(-4px);box-shadow:var(--shadow-hover);border-color:rgba(197,107,70,.35)}
+  .card:hover::before,.card.active::before{opacity:1}
 
   .card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
   .num{
     flex:none;
-    font-family:"Fraunces",serif;font-weight:600;
-    font-size:.95rem;color:var(--terracotta);
+    font-family:"Fraunces",serif;font-weight:600;font-size:.95rem;color:var(--terracotta);
     width:30px;height:30px;border-radius:50%;
-    display:grid;place-items:center;
-    background:rgba(197,107,70,.1);
+    display:grid;place-items:center;background:rgba(197,107,70,.1);
   }
   .rating{
     flex:none;display:flex;align-items:center;gap:5px;
@@ -108,40 +146,41 @@
   }
   .rating .stars{color:var(--gold);letter-spacing:1px;font-size:.8rem}
 
-  .name{
-    font-family:"Fraunces",serif;font-weight:600;
-    font-size:1.32rem;line-height:1.12;margin:2px 0 8px;
-  }
-  .tip{color:var(--ink);font-size:.95rem;margin:0 0 16px;flex:1}
+  .name{font-family:"Fraunces",serif;font-weight:600;font-size:1.32rem;line-height:1.12;margin:2px 0 8px}
+  .tip{color:var(--ink);font-size:.95rem;margin:0 0 14px;flex:1}
   .addr{
     display:flex;align-items:center;gap:8px;
     color:var(--muted);font-size:.86rem;
-    padding-top:14px;border-top:1px dashed var(--line);
+    padding-top:14px;border-top:1px dashed var(--line);margin-bottom:14px;
   }
-  .addr .pin{flex:none;color:var(--terracotta)}
-  .maps-hint{
-    margin-left:auto;font-size:.78rem;font-weight:600;
-    color:var(--terracotta-dark);
-    opacity:0;transform:translateX(-4px);
-    transition:opacity .22s ease,transform .22s ease;
-    white-space:nowrap;
+  .addr .pinico{flex:none;color:var(--terracotta)}
+
+  .actions{display:flex;gap:10px;flex-wrap:wrap}
+  .btn{
+    display:inline-flex;align-items:center;gap:7px;
+    font-size:.84rem;font-weight:600;text-decoration:none;
+    padding:9px 13px;border-radius:11px;
+    transition:transform .15s ease,background .15s ease,box-shadow .15s ease;
   }
-  .card:hover .maps-hint{opacity:1;transform:none}
+  .btn:active{transform:translateY(1px)}
+  .btn.map{background:var(--terracotta);color:#fff}
+  .btn.map:hover{background:var(--terracotta-dark)}
+  .btn.photo{background:var(--cream);color:var(--brown);border:1px solid var(--line)}
+  .btn.photo:hover{border-color:rgba(197,107,70,.45);box-shadow:var(--shadow)}
+  .btn:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 
   /* ---------- footer ---------- */
-  footer{
-    text-align:center;color:var(--muted);font-size:.85rem;
-    padding:20px 0 60px;
-  }
-  footer .divider{
-    width:60px;height:3px;border-radius:3px;margin:0 auto 20px;
-    background:linear-gradient(90deg,var(--terracotta),var(--gold));
-  }
+  footer{text-align:center;color:var(--muted);font-size:.85rem;padding:20px 0 60px}
+  footer .divider{width:60px;height:3px;border-radius:3px;margin:0 auto 20px;background:linear-gradient(90deg,var(--terracotta),var(--gold))}
 
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none!important}
+    html{scroll-behavior:auto}
+  }
   @media (max-width:520px){
-    header{padding:44px 0 8px}
-    .grid{gap:16px;padding:32px 0 16px}
-    .maps-hint{opacity:1;transform:none}
+    header{padding:40px 0 6px}
+    .grid{gap:16px;padding:24px 0 16px}
+    .m-label,.m-poi{font-size:14px}
   }
 </style>
 </head>
@@ -150,10 +189,40 @@
     <div class="wrap">
       <span class="steam" aria-hidden="true">☕</span>
       <span class="kicker">Rotterdam · Centrum</span>
-      <h1>10 fijne <span class="accent">koffiezaken</span></h1>
-      <p class="lede">Een kort en gezellig lijstje voor in het centrum. Tik op een kaart om de zaak in Google Maps te openen.</p>
+      <h1>Koffie in <span class="accent">Rotterdam</span></h1>
+      <p class="lede">10 fijne koffiezaken in het centrum, op de kaart en op een rij. Tik op een koffie-pin of op een kaartje om de zaak in Google Maps te openen.</p>
     </div>
   </header>
+
+  <section class="map-section">
+    <div class="wrap">
+      <div class="map-frame">
+        <svg viewBox="0 0 1000 620" role="img" aria-label="Overzichtskaart van het centrum van Rotterdam met de tien koffiezaken">
+          <!-- water: Nieuwe Maas (zuid) + Westersingel (west) -->
+          <path class="m-water" d="M -20 560 C 200 520, 420 600, 640 560 C 800 532, 920 560, 1020 540 L 1020 660 L -20 660 Z"></path>
+          <path class="m-water" d="M 232 210 C 224 320, 224 430, 244 540 L 214 540 C 196 430, 196 320, 204 210 Z"></path>
+
+          <!-- streets (schematic) -->
+          <path class="m-street major" d="M 470 70 L 470 560"></path>       <!-- Coolsingel N-S -->
+          <path class="m-street major" d="M 300 300 L 760 300"></path>      <!-- Meent / oost-west as -->
+          <path class="m-street minor" d="M 560 330 L 760 400"></path>      <!-- Hoogstraat richting oost -->
+          <path class="m-street minor" d="M 320 130 L 470 210"></path>      <!-- Provenierswijk -->
+          <path class="m-street minor" d="M 470 200 L 560 470"></path>      <!-- richting Glashaven -->
+          <path class="m-street minor" d="M 260 380 L 470 300"></path>      <!-- west richting Eendrachtsplein -->
+
+          <!-- orientation labels -->
+          <text class="m-label water" x="470" y="600" text-anchor="middle">Nieuwe Maas</text>
+          <text class="m-label water" x="180" y="380" transform="rotate(-90 180 380)" text-anchor="middle">Westersingel</text>
+          <text class="m-poi" x="360" y="80">Rotterdam Centraal</text>
+          <text class="m-label" x="620" y="292" text-anchor="middle">Meent</text>
+
+          <!-- pins injected here -->
+          <g id="pins"></g>
+        </svg>
+      </div>
+      <p class="map-note">Schematische overzichtskaart — pins staan bij benadering. Klik een pin voor de exacte locatie in Google Maps.</p>
+    </div>
+  </section>
 
   <main class="wrap">
     <div class="grid" id="grid" aria-label="Lijst met koffiezaken"></div>
@@ -162,39 +231,61 @@
   <footer>
     <div class="wrap">
       <div class="divider" aria-hidden="true"></div>
-      Gemaakt met veel cafeïne · sfeerbeschrijvingen zijn subjectief
+      Gemaakt met veel cafeïne · foto's & sfeerbeschrijvingen via Google Maps
     </div>
   </footer>
 
   <script>
     const shops = [
-      { name:"Cafecito Coffee Bar", tip:"Populair specialty koffieplekje, vaak een wachtrij.", addr:"Meent 52", rating:4.5 },
-      { name:"Café Van Zanten", tip:"Groot terras, vaak lekker druk.", addr:"Meent 44", rating:4.2 },
-      { name:"NEIGHBORHOOD", tip:"Trendy en levendig, terras midden in het centrum.", addr:"Herenplaats 1", rating:4.3 },
-      { name:"Booon", tip:"Gezellige drukte, binnen én buiten zitten.", addr:"Proveniersstraat 31", rating:4.4 },
-      { name:"Man met bril koffie", tip:"Populair, vaak lekker vol.", addr:"Vijverhofstraat 70", rating:4.5 },
-      { name:"Amada Coffee", tip:"Sfeervol en gezellig druk, in de Oude Haven-buurt.", addr:"Hoogstraat 36a", rating:4.6 },
-      { name:"Harvest", tip:"Populaire bakery-cafe, vaak een wachtrij.", addr:"Glashaven 105-107", rating:4.6 },
-      { name:"Coffee Company Eendrachtsplein", tip:"Levendige locatie op het plein.", addr:"Eendrachtsplein 2", rating:4.2 },
-      { name:"Hotel âme", tip:"Sfeervol hotelcafé met Japandi-interieur — populair voor koffie/matcha en werken.", addr:"Eendrachtsweg 19", rating:4.5 },
-      { name:"Round&Round", tip:"Matcha- en cakezaak, gezellig druk (let op: open vanaf 12:00).", addr:"Hoogstraat 55A", rating:4.4 },
+      { name:"Cafecito Coffee Bar", tip:"Populair specialty koffieplekje, vaak een wachtrij.", addr:"Meent 52", rating:4.5, x:548, y:300 },
+      { name:"Café Van Zanten", tip:"Groot terras, vaak lekker druk.", addr:"Meent 44", rating:4.2, x:600, y:300 },
+      { name:"NEIGHBORHOOD", tip:"Trendy en levendig, terras midden in het centrum.", addr:"Herenplaats 1", rating:4.3, x:512, y:340 },
+      { name:"Booon", tip:"Gezellige drukte, binnen én buiten zitten.", addr:"Proveniersstraat 31", rating:4.4, x:340, y:150 },
+      { name:"Man met bril koffie", tip:"Populair, vaak lekker vol.", addr:"Vijverhofstraat 70", rating:4.5, x:470, y:110 },
+      { name:"Amada Coffee", tip:"Sfeervol en gezellig druk, in de Oude Haven-buurt.", addr:"Hoogstraat 36a", rating:4.6, x:660, y:370 },
+      { name:"Harvest", tip:"Populaire bakery-cafe, vaak een wachtrij.", addr:"Glashaven 105-107", rating:4.6, x:558, y:470 },
+      { name:"Coffee Company Eendrachtsplein", tip:"Levendige locatie op het plein.", addr:"Eendrachtsplein 2", rating:4.2, x:300, y:380 },
+      { name:"Hotel âme", tip:"Sfeervol hotelcafé met Japandi-interieur — populair voor koffie/matcha en werken.", addr:"Eendrachtsweg 19", rating:4.5, x:300, y:435, photoQuery:"Hotel âme café Rotterdam", photoLabel:"Foto's van het café" },
+      { name:"Round&Round", tip:"Matcha- en cakezaak, gezellig druk (let op: open vanaf 12:00).", addr:"Hoogstraat 55A", rating:4.4, x:710, y:395 },
     ];
 
-    // 5-sterren rij op basis van rating (halve ster afgerond)
     function stars(r){
       const full = Math.round(r);
       return "★".repeat(full) + "☆".repeat(5 - full);
     }
-
     function mapsUrl(name, addr){
-      const q = encodeURIComponent(`${name}, ${addr}, Rotterdam`);
-      return `https://www.google.com/maps/search/?api=1&query=${q}`;
+      return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(`${name}, ${addr}, Rotterdam`);
     }
+    function photosUrl(s){
+      const q = s.photoQuery || `${s.name}, ${s.addr}, Rotterdam`;
+      return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q);
+    }
+    const SVGNS = "http://www.w3.org/2000/svg";
 
+    // ---- pins ----
+    const pinsG = document.getElementById("pins");
+    shops.forEach((s, i) => {
+      const g = document.createElementNS(SVGNS, "a");
+      g.setAttributeNS("http://www.w3.org/1999/xlink", "href", mapsUrl(s.name, s.addr));
+      g.setAttribute("href", mapsUrl(s.name, s.addr));
+      g.setAttribute("target", "_blank");
+      g.setAttribute("rel", "noopener");
+      g.setAttribute("class", "pin");
+      g.setAttribute("data-index", i);
+      g.setAttribute("tabindex", "0");
+      g.setAttribute("aria-label", `${s.name}, ${s.addr}, open in Google Maps`);
+      g.innerHTML = `
+        <circle class="halo" cx="${s.x}" cy="${s.y}" r="30"></circle>
+        <circle class="disc" cx="${s.x}" cy="${s.y}" r="16"></circle>
+        <text class="pnum" x="${s.x}" y="${s.y + 4}">${i + 1}</text>
+        <title>${s.name} — ${s.addr}</title>`;
+      pinsG.appendChild(g);
+    });
+
+    // ---- cards ----
     const grid = document.getElementById("grid");
     grid.innerHTML = shops.map((s, i) => `
-      <a class="card" href="${mapsUrl(s.name, s.addr)}" target="_blank" rel="noopener"
-         aria-label="${s.name}, ${s.addr}, beoordeling ${s.rating} van 5">
+      <article class="card" id="spot-${i}" data-index="${i}">
         <div class="card-top">
           <span class="num">${i + 1}</span>
           <span class="rating"><span class="stars" aria-hidden="true">${stars(s.rating)}</span>${s.rating.toFixed(1)}</span>
@@ -202,12 +293,33 @@
         <h2 class="name">${s.name}</h2>
         <p class="tip">${s.tip}</p>
         <div class="addr">
-          <span class="pin" aria-hidden="true">📍</span>
+          <span class="pinico" aria-hidden="true">📍</span>
           <span>${s.addr}</span>
-          <span class="maps-hint">Open in Maps →</span>
         </div>
-      </a>
+        <div class="actions">
+          <a class="btn map" href="${mapsUrl(s.name, s.addr)}" target="_blank" rel="noopener">📍 Kaart</a>
+          <a class="btn photo" href="${photosUrl(s)}" target="_blank" rel="noopener">📷 ${s.photoLabel || "Foto's"}</a>
+        </div>
+      </article>
     `).join("");
+
+    // ---- link map pins <-> cards ----
+    const pinEls = [...document.querySelectorAll(".pin")];
+    const cardEls = [...document.querySelectorAll(".card")];
+    function setActive(i, on){
+      pinEls[i] && pinEls[i].classList.toggle("active", on);
+      cardEls[i] && cardEls[i].classList.toggle("active", on);
+    }
+    pinEls.forEach((p, i) => {
+      p.addEventListener("mouseenter", () => setActive(i, true));
+      p.addEventListener("mouseleave", () => setActive(i, false));
+      p.addEventListener("focus", () => setActive(i, true));
+      p.addEventListener("blur", () => setActive(i, false));
+    });
+    cardEls.forEach((c, i) => {
+      c.addEventListener("mouseenter", () => setActive(i, true));
+      c.addEventListener("mouseleave", () => setActive(i, false));
+    });
   </script>
 </body>
 </html>
