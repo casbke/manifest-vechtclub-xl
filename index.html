@@ -257,6 +257,8 @@
       { name:"Round&Round", slug:"round-en-round", tip:"Matcha- en cakezaak, gezellig druk (let op: open vanaf 12:00).", addr:"Hoogstraat 55A", rating:4.4, x:710, y:395 },
     ];
 
+    // optioneel ingesloten foto's (bijv. in een preview); anders komen ze uit de map fotos/
+    const PHOTO_DATA = window.PHOTO_DATA || {};
     // probeert fotos/<slug>.jpg, dan .jpeg/.png/.webp; anders blijft de placeholder staan
     const PHOTO_EXTS = ["jpg","jpeg","png","webp"];
     function photoFallback(img){
@@ -308,7 +310,7 @@
       <article class="card" id="spot-${i}" data-index="${i}">
         <div class="photo-wrap">
           <div class="photo-ph" aria-hidden="true">☕</div>
-          <img class="photo" src="fotos/${s.slug}.jpg" data-slug="${s.slug}" data-ext="0"
+          <img class="photo" src="${PHOTO_DATA[s.slug] || ('fotos/' + s.slug + '.jpg')}" data-slug="${s.slug}" data-ext="0"
                alt="Sfeerfoto van ${s.name}" loading="lazy" onerror="photoFallback(this)">
         </div>
         <div class="card-top">
