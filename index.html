@@ -131,6 +131,14 @@
   .card:hover,.card.active{transform:translateY(-4px);box-shadow:var(--shadow-hover);border-color:rgba(197,107,70,.35)}
   .card:hover::before,.card.active::before{opacity:1}
 
+  .photo-wrap{
+    position:relative;margin:-22px -22px 16px;aspect-ratio:16/10;
+    background:linear-gradient(135deg,#e7d3c2,#d3ac8f);
+    overflow:hidden;
+  }
+  .photo-ph{position:absolute;inset:0;display:grid;place-items:center;font-size:2.4rem;opacity:.65}
+  .photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+
   .card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
   .num{
     flex:none;
@@ -237,17 +245,29 @@
 
   <script>
     const shops = [
-      { name:"Cafecito Coffee Bar", tip:"Populair specialty koffieplekje, vaak een wachtrij.", addr:"Meent 52", rating:4.5, x:548, y:300 },
-      { name:"Café Van Zanten", tip:"Groot terras, vaak lekker druk.", addr:"Meent 44", rating:4.2, x:600, y:300 },
-      { name:"NEIGHBORHOOD", tip:"Trendy en levendig, terras midden in het centrum.", addr:"Herenplaats 1", rating:4.3, x:512, y:340 },
-      { name:"Booon", tip:"Gezellige drukte, binnen én buiten zitten.", addr:"Proveniersstraat 31", rating:4.4, x:340, y:150 },
-      { name:"Man met bril koffie", tip:"Populair, vaak lekker vol.", addr:"Vijverhofstraat 70", rating:4.5, x:470, y:110 },
-      { name:"Amada Coffee", tip:"Sfeervol en gezellig druk, in de Oude Haven-buurt.", addr:"Hoogstraat 36a", rating:4.6, x:660, y:370 },
-      { name:"Harvest", tip:"Populaire bakery-cafe, vaak een wachtrij.", addr:"Glashaven 105-107", rating:4.6, x:558, y:470 },
-      { name:"Coffee Company Eendrachtsplein", tip:"Levendige locatie op het plein.", addr:"Eendrachtsplein 2", rating:4.2, x:300, y:380 },
-      { name:"Hotel âme", tip:"Sfeervol hotelcafé met Japandi-interieur — populair voor koffie/matcha en werken.", addr:"Eendrachtsweg 19", rating:4.5, x:300, y:435, photoQuery:"Hotel âme café Rotterdam", photoLabel:"Foto's van het café" },
-      { name:"Round&Round", tip:"Matcha- en cakezaak, gezellig druk (let op: open vanaf 12:00).", addr:"Hoogstraat 55A", rating:4.4, x:710, y:395 },
+      { name:"Cafecito Coffee Bar", slug:"cafecito", tip:"Populair specialty koffieplekje, vaak een wachtrij.", addr:"Meent 52", rating:4.5, x:548, y:300 },
+      { name:"Café Van Zanten", slug:"van-zanten", tip:"Groot terras, vaak lekker druk.", addr:"Meent 44", rating:4.2, x:600, y:300 },
+      { name:"NEIGHBORHOOD", slug:"neighborhood", tip:"Trendy en levendig, terras midden in het centrum.", addr:"Herenplaats 1", rating:4.3, x:512, y:340 },
+      { name:"Booon", slug:"booon", tip:"Gezellige drukte, binnen én buiten zitten.", addr:"Proveniersstraat 31", rating:4.4, x:340, y:150 },
+      { name:"Man met bril koffie", slug:"man-met-bril", tip:"Populair, vaak lekker vol.", addr:"Vijverhofstraat 70", rating:4.5, x:470, y:110 },
+      { name:"Amada Coffee", slug:"amada", tip:"Sfeervol en gezellig druk, in de Oude Haven-buurt.", addr:"Hoogstraat 36a", rating:4.6, x:660, y:370 },
+      { name:"Harvest", slug:"harvest", tip:"Populaire bakery-cafe, vaak een wachtrij.", addr:"Glashaven 105-107", rating:4.6, x:558, y:470 },
+      { name:"Coffee Company Eendrachtsplein", slug:"coffee-company", tip:"Levendige locatie op het plein.", addr:"Eendrachtsplein 2", rating:4.2, x:300, y:380 },
+      { name:"Hotel âme", slug:"hotel-ame", tip:"Sfeervol hotelcafé met Japandi-interieur — populair voor koffie/matcha en werken.", addr:"Eendrachtsweg 19", rating:4.5, x:300, y:435, photoQuery:"Hotel âme café Rotterdam", photoLabel:"Foto's van het café" },
+      { name:"Round&Round", slug:"round-en-round", tip:"Matcha- en cakezaak, gezellig druk (let op: open vanaf 12:00).", addr:"Hoogstraat 55A", rating:4.4, x:710, y:395 },
     ];
+
+    // probeert fotos/<slug>.jpg, dan .jpeg/.png/.webp; anders blijft de placeholder staan
+    const PHOTO_EXTS = ["jpg","jpeg","png","webp"];
+    function photoFallback(img){
+      let idx = parseInt(img.dataset.ext || "0", 10) + 1;
+      if (idx < PHOTO_EXTS.length){
+        img.dataset.ext = idx;
+        img.src = `fotos/${img.dataset.slug}.${PHOTO_EXTS[idx]}`;
+      } else {
+        img.remove();
+      }
+    }
 
     function stars(r){
       const full = Math.round(r);
@@ -286,6 +306,11 @@
     const grid = document.getElementById("grid");
     grid.innerHTML = shops.map((s, i) => `
       <article class="card" id="spot-${i}" data-index="${i}">
+        <div class="photo-wrap">
+          <div class="photo-ph" aria-hidden="true">☕</div>
+          <img class="photo" src="fotos/${s.slug}.jpg" data-slug="${s.slug}" data-ext="0"
+               alt="Sfeerfoto van ${s.name}" loading="lazy" onerror="photoFallback(this)">
+        </div>
         <div class="card-top">
           <span class="num">${i + 1}</span>
           <span class="rating"><span class="stars" aria-hidden="true">${stars(s.rating)}</span>${s.rating.toFixed(1)}</span>
