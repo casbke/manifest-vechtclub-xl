@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manifest — Vechtclub XL · Groep 36</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#16140f;
+    --paper:#f4f1ea;
+    --concrete:#211e18;
+    --accent:#ff4d1c;
+    --accent-2:#f5a623;
+    --green:#3f7d54;
+    --muted:#6b6457;
+    --line:rgba(22,20,15,.14);
+    --maxw:1180px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Archivo",system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  h1,h2,h3{font-family:"Archivo Black",sans-serif;line-height:.98;letter-spacing:-.02em;margin:0}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px}
+  .page{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:84px 0;position:relative}
+  .eyebrow{font-weight:800;letter-spacing:.18em;text-transform:uppercase;font-size:.72rem;color:var(--accent)}
+
+  /* ---------- animations ---------- */
+  .reveal{opacity:0;transform:translateY(30px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+  .reveal.left{transform:translateX(-40px)}
+  .reveal.right{transform:translateX(40px)}
+  .reveal.left.in,.reveal.right.in{transform:none}
+  .reveal.zoom{transform:scale(.92)}
+  .reveal.zoom.in{transform:none}
+  [data-delay="1"]{transition-delay:.1s}[data-delay="2"]{transition-delay:.2s}
+  [data-delay="3"]{transition-delay:.3s}[data-delay="4"]{transition-delay:.4s}[data-delay="5"]{transition-delay:.5s}
+
+  @keyframes floaty{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-18px) rotate(-2deg)}}
+  @keyframes drift{0%,100%{transform:translate(0,0)}50%{transform:translate(20px,-24px)}}
+  @keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
+  @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  @keyframes drawline{from{width:0}to{width:100%}}
+
+  /* scroll progress bar */
+  #bar{position:fixed;top:0;left:0;height:4px;width:0;background:linear-gradient(90deg,var(--accent),var(--accent-2));z-index:99}
+
+  /* ---------- nav ---------- */
+  nav{position:fixed;top:4px;left:0;right:0;z-index:50;display:flex;justify-content:space-between;align-items:center;
+      padding:14px 28px;backdrop-filter:blur(8px);background:rgba(244,241,234,.78);border-bottom:1px solid var(--line)}
+  nav .brand{font-family:"Archivo Black";font-size:1rem}
+  nav .brand span{color:var(--accent)}
+  nav .pages{display:flex;gap:6px;font-weight:700;font-size:.82rem}
+  nav .pages a{color:var(--ink);text-decoration:none;padding:6px 12px;border-radius:999px;border:1px solid transparent;transition:.2s}
+  nav .pages a.active{background:var(--ink);color:var(--paper)}
+
+  /* ---------- HERO ---------- */
+  #hero{background:var(--concrete);color:var(--paper);min-height:100vh;overflow:hidden}
+  #hero .wrap{position:relative;z-index:2}
+  #hero .bg{position:absolute;inset:0;z-index:0;animation:drift 16s ease-in-out infinite;
+    background:radial-gradient(900px 500px at 85% 12%,rgba(255,77,28,.32),transparent 60%),
+              radial-gradient(700px 600px at 8% 92%,rgba(245,166,35,.20),transparent 60%)}
+  #hero .photo{position:absolute;right:-30px;bottom:-20px;width:min(44vw,540px);z-index:1;opacity:.92;
+    border:8px solid rgba(255,255,255,.06);animation:floaty 7s ease-in-out infinite;filter:saturate(1.05)}
+  #hero .kicker{color:var(--accent-2)}
+  #hero h1{font-size:clamp(2.6rem,7.4vw,6.4rem);margin:.18em 0 .25em;max-width:14ch}
+  #hero h1 em{font-style:normal;color:var(--accent)}
+  #hero .lead{font-size:clamp(1.05rem,2vw,1.4rem);max-width:42ch;color:#e9e4d8;font-weight:500}
+  .urg{margin-top:30px;display:inline-flex;gap:14px;align-items:flex-start;max-width:50ch;
+    border-left:4px solid var(--accent);padding:8px 0 8px 18px}
+  .urg .dot{color:var(--accent);animation:pulse 1.6s infinite}
+  .urg b{color:#fff}
+  .cta-row{margin-top:36px;display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+  .btn{display:inline-flex;align-items:center;gap:10px;font-weight:800;text-decoration:none;border-radius:999px;
+    padding:15px 26px;font-size:1rem;transition:transform .15s ease,box-shadow .15s ease}
+  .btn-primary{background:var(--accent);color:#fff;box-shadow:0 10px 30px rgba(255,77,28,.35)}
+  .btn-primary:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 18px 40px rgba(255,77,28,.5)}
+  .btn-ghost{border:1.5px solid rgba(255,255,255,.4);color:#fff}
+  .btn-ghost:hover{background:rgba(255,255,255,.1)}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;margin-top:50px}
+  .stat{border-top:3px solid var(--accent)}
+  .stat .n{font-family:"Archivo Black";font-size:clamp(1.8rem,4vw,2.8rem);color:#fff;line-height:1}
+  .stat .l{font-size:.82rem;color:#cfc8b8;margin-top:6px;font-weight:600}
+
+  /* marquee ticker */
+  .ticker{background:var(--accent);color:#fff;overflow:hidden;white-space:nowrap;padding:12px 0;font-family:"Archivo Black";font-size:1rem}
+  .ticker .track{display:inline-block;animation:marquee 26s linear infinite}
+  .ticker span{padding:0 26px}
+  .ticker .dotsep{opacity:.6}
+
+  /* ---------- sections ---------- */
+  section.light{background:var(--paper)}
+  .sec-head{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;margin-bottom:8px}
+  .sec-head h2{font-size:clamp(1.9rem,4.4vw,3.3rem);max-width:20ch}
+  .sec-head .num{font-family:"Archivo Black";color:var(--accent);font-size:1.1rem}
+  .sub{color:var(--muted);max-width:62ch;font-size:1.05rem}
+
+  /* ---------- PERSONA ---------- */
+  #persona{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .persona-grid{display:grid;grid-template-columns:300px 1fr;gap:48px;align-items:center}
+  .persona-card{background:var(--concrete);color:var(--paper);border-radius:18px;padding:30px;text-align:center;
+    box-shadow:0 24px 60px rgba(0,0,0,.22);position:relative;overflow:hidden}
+  .persona-card .ring{position:absolute;inset:-40%;background:conic-gradient(from 0deg,var(--accent),var(--accent-2),var(--accent));
+    animation:spin 12s linear infinite;opacity:.16}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .persona-card .inner{position:relative;z-index:2}
+  .avatar{width:130px;height:130px;border-radius:50%;margin:0 auto 14px;display:block;border:4px solid var(--accent)}
+  .persona-card h3{font-size:1.5rem;color:#fff}
+  .persona-card .role{color:var(--accent-2);font-weight:700;font-size:.9rem;margin-top:4px}
+  .persona-card ul{list-style:none;padding:0;margin:16px 0 0;text-align:left;font-size:.86rem;color:#d8d2c4}
+  .persona-card li{padding:7px 0;border-top:1px solid rgba(255,255,255,.12);display:flex;gap:8px}
+  .persona-card li::before{content:"›";color:var(--accent)}
+  .letter h2{font-size:clamp(1.6rem,3.6vw,2.6rem);margin-bottom:16px}
+  .letter h2 em{font-style:normal;color:var(--accent)}
+  .letter p{font-size:1.08rem;color:#3a352b;max-width:58ch}
+  .letter .sign{margin-top:18px;font-weight:800}
+
+  /* dream */
+  .dream{display:grid;grid-template-columns:1.1fr .9fr;gap:42px;align-items:center;margin-top:34px}
+  .dream .quote{font-family:"Archivo Black";font-size:clamp(1.4rem,3vw,2.2rem);line-height:1.08}
+  .dream .quote em{color:var(--accent);font-style:normal}
+  .dream p{color:#3a352b;font-size:1.05rem}
+  figure{margin:0}
+  .imgwrap{overflow:hidden;border-radius:10px;box-shadow:0 18px 50px rgba(0,0,0,.16)}
+  .imgwrap img{width:100%;display:block;transition:transform .9s ease}
+  .imgwrap:hover img{transform:scale(1.06)}
+  figcaption{font-size:.78rem;color:var(--muted);margin-top:8px;font-weight:600}
+
+  /* ---------- MEERWAARDE pillars ---------- */
+  #meerwaarde{background:var(--paper)}
+  .pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:38px}
+  .pillar{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;transition:transform .25s ease,box-shadow .25s ease}
+  .pillar:hover{transform:translateY(-8px);box-shadow:0 22px 50px rgba(0,0,0,.14)}
+  .pillar .ph{height:150px;overflow:hidden}
+  .pillar .ph img{width:100%;height:100%;object-fit:cover;transition:transform .8s ease}
+  .pillar:hover .ph img{transform:scale(1.08)}
+  .pillar .pb{padding:22px}
+  .pillar .badge{font-family:"Archivo Black";font-size:.78rem;letter-spacing:.05em;padding:4px 10px;border-radius:999px;color:#fff;display:inline-block}
+  .pillar h3{font-size:1.2rem;margin:12px 0 8px}
+  .pillar p{margin:0;color:#4a4438;font-size:.95rem}
+  .b-eco{background:var(--accent)} .b-soc{background:var(--accent-2);color:#16140f}.b-grn{background:var(--green)}
+
+  /* balance / kost-opbrengst */
+  .balance{margin-top:48px;background:var(--concrete);color:var(--paper);border-radius:18px;padding:38px;display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+  .balance h3{font-size:clamp(1.4rem,3vw,2rem);color:#fff;max-width:16ch}
+  .balance h3 em{color:var(--accent);font-style:normal}
+  .bars .row{margin:18px 0}
+  .bars .lab{display:flex;justify-content:space-between;font-weight:700;font-size:.85rem;margin-bottom:6px}
+  .bars .track{height:16px;background:rgba(255,255,255,.1);border-radius:999px;overflow:hidden}
+  .bars .fill{height:100%;width:0;border-radius:999px;transition:width 1.4s cubic-bezier(.2,.7,.2,1)}
+  .fill.kost{background:linear-gradient(90deg,#7a7468,#9a9384)}
+  .fill.opbrengst{background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+
+  /* stellingen */
+  .stel{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:40px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:26px;position:relative;overflow:hidden;transition:transform .25s ease}
+  .card:hover{transform:translateY(-6px)}
+  .card::before{content:"";position:absolute;top:0;left:0;width:100%;height:5px;background:var(--accent)}
+  .card .tag{font-family:"Archivo Black";color:var(--accent);font-size:.85rem}
+  .card h3{font-size:1.22rem;margin:10px 0 8px;line-height:1.05}
+  .card p{color:#4a4438;font-size:.96rem;margin:0}
+
+  .pagebreak{display:flex;justify-content:center;padding:30px 0 4px}
+
+  /* page2 args */
+  .args{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;margin-top:34px}
+  .arg{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;transition:transform .25s ease,box-shadow .25s ease}
+  .arg:hover{transform:translateY(-6px);box-shadow:0 18px 40px rgba(0,0,0,.12)}
+  .arg .ph{height:180px;overflow:hidden}
+  .arg .ph img{width:100%;height:100%;object-fit:cover;transition:transform .8s ease}
+  .arg:hover .ph img{transform:scale(1.07)}
+  .arg .body{padding:20px 22px}
+  .arg h3{font-size:1.15rem;margin-bottom:8px}
+  .arg p{margin:0;color:#4a4438;font-size:.95rem}
+  .arg .data{display:inline-block;margin-top:12px;font-weight:800;color:var(--accent);font-size:.85rem;background:rgba(255,77,28,.1);padding:4px 10px;border-radius:999px}
+
+  .pull{margin:48px 0;border-left:6px solid var(--accent);padding:6px 0 6px 26px}
+  .pull blockquote{margin:0;font-family:"Archivo Black";font-size:clamp(1.3rem,3vw,2rem);line-height:1.08}
+  .pull cite{display:block;margin-top:12px;font-style:normal;font-weight:700;color:var(--muted);font-size:.9rem}
+
+  .lessons{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:30px}
+  .lesson{display:flex;gap:14px;align-items:flex-start}
+  .lesson .b{font-family:"Archivo Black";color:var(--accent);font-size:1.3rem;line-height:1}
+  .lesson p{margin:0;font-size:.96rem;color:#3a352b}
+
+  /* oproep */
+  #oproep{background:var(--concrete);color:var(--paper);overflow:hidden}
+  #oproep .sec-head h2{color:#fff}
+  #oproep .sub{color:#cfc8b8}
+  .calls{counter-reset:c;margin-top:34px;display:grid;grid-template-columns:repeat(2,1fr);gap:18px 34px}
+  .call{display:flex;gap:18px;align-items:flex-start;padding:18px 0;border-top:1px solid rgba(255,255,255,.14);transition:transform .25s ease}
+  .call:hover{transform:translateX(6px)}
+  .call::before{counter-increment:c;content:counter(c,decimal-leading-zero);font-family:"Archivo Black";color:var(--accent);font-size:1.4rem;min-width:46px}
+  .call h3{font-size:1.12rem;color:#fff;margin-bottom:4px}
+  .call p{margin:0;color:#cfc8b8;font-size:.95rem}
+
+  .kern{margin-top:64px;text-align:center}
+  .kern .eyebrow{color:var(--accent-2)}
+  .kern h2{font-size:clamp(2rem,6vw,4.4rem);color:#fff;margin:14px auto;max-width:18ch}
+  .kern h2 em{font-style:normal;color:var(--accent)}
+  .signoff{margin-top:28px;color:#cfc8b8;font-weight:600;font-size:.95rem}
+
+  footer{background:#111}
+  footer .wrap{padding:30px 28px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;color:#9a9384;font-size:.85rem}
+  footer b{color:#e9e4d8}
+
+  /* ---------- LOCATIE / EXTERIEUR band ---------- */
+  .locband{position:relative;height:52vh;min-height:340px;overflow:hidden}
+  .locband img{width:100%;height:100%;object-fit:cover;transform:scale(1.05);transition:transform 1.2s ease}
+  .locband:hover img{transform:scale(1.1)}
+  .locband .ov{position:absolute;inset:0;background:linear-gradient(180deg,rgba(33,30,24,.15),rgba(33,30,24,.75))}
+  .locband .cap{position:absolute;left:0;right:0;bottom:0;padding:38px 28px}
+  .locband .cap .wrap{padding:0}
+  .locband h2{color:#fff;font-size:clamp(1.6rem,4vw,3rem);max-width:18ch}
+  .locband h2 em{color:var(--accent);font-style:normal}
+  .locband p{color:#e9e4d8;font-weight:600;max-width:46ch;margin-top:8px}
+
+  /* ---------- MEETMODEL dashboard ---------- */
+  .dash{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.10);margin-top:34px}
+  .dash-top{background:var(--concrete);color:#fff;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+  .dash-top .eyebrow{color:var(--accent-2)}
+  .dash-top h3{font-size:1.25rem;color:#fff;margin-top:4px}
+  .dash-top .save{font-size:.78rem;font-weight:700;border:1px solid rgba(255,255,255,.3);padding:9px 16px;border-radius:8px;color:#fff;background:transparent;cursor:default}
+  .dash-body{display:grid;grid-template-columns:1fr 1fr}
+  .dash-col{padding:26px 28px}
+  .dash-col+.dash-col{border-left:1px solid var(--line)}
+  .coltitle{font-weight:800;letter-spacing:.12em;font-size:.7rem;color:var(--muted);text-transform:uppercase;margin-bottom:16px}
+  .kpi{background:#fbfaf7;border:1px solid var(--line);border-left:4px solid var(--k);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+  .kpi .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .kpi h4{font-size:1rem;margin:0;color:var(--ink)}
+  .kpi .desc{font-size:.8rem;color:var(--muted);margin:2px 0 10px}
+  .kpi .val{font-family:"Archivo Black";font-size:1.25rem;color:var(--k);white-space:nowrap}
+  .kpi .unit{font-size:.78rem;color:var(--muted);font-weight:700}
+  .kpi .badge{font-size:.7rem;font-weight:800;padding:2px 8px;border-radius:999px;margin-left:4px}
+  .badge-ok{background:rgba(63,125,84,.16);color:var(--green)}
+  .badge-act{background:rgba(255,77,28,.16);color:var(--accent)}
+  .kpi input[type=range]{width:100%;accent-color:var(--k);margin-top:2px;cursor:pointer}
+  .kpi .scale{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-top:2px}
+  .kpi .drempel{color:var(--accent);font-weight:700}
+  .radar{display:block;margin:0 auto;max-width:340px}
+  .radar polygon.grid{fill:none;stroke:var(--line)}
+  .radar line.axis{stroke:var(--line)}
+  .radar polygon.area{fill:rgba(31,58,90,.18);stroke:#1f3a5a;stroke-width:2;stroke-linejoin:round}
+  .radar text{font-size:9px;fill:var(--muted);font-weight:700}
+  .radar circle.pt{fill:#1f3a5a}
+  .pbar{margin:11px 0}
+  .pbar .lab{display:flex;justify-content:space-between;font-size:.86rem;font-weight:700}
+  .pbar .lab .s{font-family:"Archivo Black"}
+  .pbar .track{height:8px;background:#ececec;border-radius:999px;overflow:hidden;margin-top:4px}
+  .pbar .fill{height:100%;width:0;border-radius:999px}
+  .radar polygon.area,.radar circle.pt{transition:none}
+  .status-ok{margin-top:18px;background:rgba(63,125,84,.12);color:var(--green);border:1px solid rgba(63,125,84,.3);padding:12px 16px;border-radius:10px;font-weight:700;font-size:.88rem}
+  .status-ok.warn{background:rgba(255,77,28,.1);color:var(--accent);border-color:rgba(255,77,28,.35)}
+  .steps{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-top:24px}
+  .step{border:1px solid var(--line);border-radius:10px;padding:14px;transition:transform .2s ease,box-shadow .2s ease}
+  .step:hover{transform:translateY(-4px);box-shadow:0 12px 26px rgba(0,0,0,.1)}
+  .step .no{width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-weight:800;font-size:.8rem;display:flex;align-items:center;justify-content:center;margin-bottom:8px}
+  .step h5{font-size:.8rem;margin:0 0 3px}
+  .step p{font-size:.71rem;color:var(--muted);margin:0;line-height:1.35}
+
+  @media(max-width:880px){
+    .steps{grid-template-columns:repeat(2,1fr)}
+    .dash-body{grid-template-columns:1fr}
+    .dash-col+.dash-col{border-left:none;border-top:1px solid var(--line)}
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .dream,.stel,.args,.lessons,.calls,.pillars,.balance,.persona-grid{grid-template-columns:1fr}
+    #hero .photo{display:none}
+    nav .pages{display:none}
+  }
+</style>
+</head>
+<body>
+<div id="bar"></div>
+
+<nav>
+  <div class="brand">VECHTCLUB <span>XL</span> · Manifest</div>
+  <div class="pages">
+    <a href="#hero" class="active" data-nav>Visie</a>
+    <a href="#pagina2" data-nav>De Oproep</a>
+  </div>
+</nav>
+
+<!-- ============================== PAGINA 1 ============================== -->
+<section class="page" id="hero">
+  <div class="bg"></div>
+  <img class="photo" src="Fotos%20website/D1%20Maakbedrijven%20Vechtclub%20XL.png" alt="Vechtclub XL">
+  <div class="wrap">
+    <p class="eyebrow kicker">Manifest · Groep 36 · aan de gemeente Utrecht</p>
+    <h1>Sloop niet de ziel <em>van de stad</em> die nog gebouwd moet worden.</h1>
+    <p class="lead">Tussen 10.000 nieuwe woningen ligt een plek waar de wijk al leeft. Behoud Vechtclub XL — niet als herinnering, maar als het kloppend hart van de Merwedekanaalzone.</p>
+    <div class="urg">
+      <span class="dot">⚠</span>
+      <p>De tijdelijke huurcontracten <b>lopen nu af</b>. De gemeente moet vandaag kiezen: óf we verankeren de broedplaats in het plan, óf tien jaar opgebouwde waarde verdwijnt onder de heimachine. Er is geen pauzeknop.</p>
+    </div>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="#pagina2">Lees onze oproep aan de gemeente →</a>
+      <a class="btn btn-ghost" href="#persona">Voor wie dit is ↓</a>
+    </div>
+    <div class="stats">
+      <div class="stat reveal" data-delay="1"><div class="n"><span class="count" data-to="10">0</span>&nbsp;jaar</div><div class="l">van lege loods naar levende plek</div></div>
+      <div class="stat reveal" data-delay="2"><div class="n">±<span class="count" data-to="140">0</span></div><div class="l">ondernemers & makers</div></div>
+      <div class="stat reveal" data-delay="3"><div class="n">±<span class="count" data-to="60">0</span></div><div class="l">studio's, ateliers & werkplaatsen</div></div>
+      <div class="stat reveal" data-delay="4"><div class="n"><span class="count" data-to="10000">0</span></div><div class="l">nieuwe woningen om de plek heen</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="ticker"><div class="track">
+  <span>WERKGELEGENHEID</span><span class="dotsep">●</span><span>INNOVATIE</span><span class="dotsep">●</span><span>ONTMOETING</span><span class="dotsep">●</span><span>CIRCULAIR HERGEBRUIK</span><span class="dotsep">●</span><span>BREDE WELVAART</span><span class="dotsep">●</span>
+  <span>WERKGELEGENHEID</span><span class="dotsep">●</span><span>INNOVATIE</span><span class="dotsep">●</span><span>ONTMOETING</span><span class="dotsep">●</span><span>CIRCULAIR HERGEBRUIK</span><span class="dotsep">●</span><span>BREDE WELVAART</span><span class="dotsep">●</span>
+  <span>WERKGELEGENHEID</span><span class="dotsep">●</span><span>INNOVATIE</span><span class="dotsep">●</span><span>ONTMOETING</span><span class="dotsep">●</span><span>CIRCULAIR HERGEBRUIK</span><span class="dotsep">●</span><span>BREDE WELVAART</span><span class="dotsep">●</span>
+  <span>WERKGELEGENHEID</span><span class="dotsep">●</span><span>INNOVATIE</span><span class="dotsep">●</span><span>ONTMOETING</span><span class="dotsep">●</span><span>CIRCULAIR HERGEBRUIK</span><span class="dotsep">●</span><span>BREDE WELVAART</span><span class="dotsep">●</span>
+  <span>WERKGELEGENHEID</span><span class="dotsep">●</span><span>INNOVATIE</span><span class="dotsep">●</span><span>ONTMOETING</span><span class="dotsep">●</span><span>CIRCULAIR HERGEBRUIK</span><span class="dotsep">●</span><span>BREDE WELVAART</span><span class="dotsep">●</span>
+  <span>WERKGELEGENHEID</span><span class="dotsep">●</span><span>INNOVATIE</span><span class="dotsep">●</span><span>ONTMOETING</span><span class="dotsep">●</span><span>CIRCULAIR HERGEBRUIK</span><span class="dotsep">●</span><span>BREDE WELVAART</span><span class="dotsep">●</span>
+</div></div>
+
+<!-- ============================== LOCATIE / EXTERIEUR ============================== -->
+<section class="locband">
+  <img src="Fotos%20website/vechtclub-buitenkant.jpg"
+       onerror="this.onerror=null;this.src='Fotos%20website/D1%20Maakbedrijven%20Vechtclub%20XL.png'"
+       alt="Vechtclub XL in de Merwedekanaalzone">
+  <div class="ov"></div>
+  <div class="cap"><div class="wrap reveal">
+    <h2>Hier staat het al: <em>tien jaar</em> opgebouwde stad.</h2>
+    <p>Vechtclub XL in de Merwedekanaalzone, Utrecht — gevestigd in een voormalig farmaceutisch pand (OPG), met stadslandbouw en ontmoeting op het buitenterrein.</p>
+  </div></div>
+</section>
+
+<!-- ============================== PERSONA ============================== -->
+<section class="page light" id="persona">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="num">★</span><h2>Dit schrijven wij aan jou, Marit.</h2></div>
+    <p class="sub reveal">Een manifest is voor mensen, niet voor instanties. Daarom richten we ons tot één persoon die straks aan tafel zit als er beslist wordt over de Merwedekanaalzone.</p>
+    <div class="persona-grid" style="margin-top:36px">
+      <div class="persona-card reveal left">
+        <div class="ring"></div>
+        <div class="inner">
+          <svg class="avatar" viewBox="0 0 130 130" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="65" cy="65" r="65" fill="#2b2820"/>
+            <circle cx="65" cy="52" r="26" fill="#f5a623"/>
+            <path d="M20 122c4-26 23-40 45-40s41 14 45 40z" fill="#ff4d1c"/>
+            <path d="M39 48c0-18 12-28 26-28s26 10 26 26c-8-6-16-8-26-8s-18 4-26 10z" fill="#16140f"/>
+          </svg>
+          <h3>Marit (41)</h3>
+          <div class="role">Adviseur Gebiedsontwikkeling · Gemeente Utrecht</div>
+          <ul>
+            <li>Moet de woningbouwopgave halen</li>
+            <li>Bewaakt de doelen uit de RSU 2040</li>
+            <li>Houdt budget & risico scherp in de gaten</li>
+            <li>Wil een wijk waar Utrecht trots op is</li>
+          </ul>
+        </div>
+      </div>
+      <div class="letter reveal right">
+        <h2>Beste Marit, je hoeft niet te <em>kiezen</em> tussen woningen en de broedplaats.</h2>
+        <p>Je staat onder druk: 10.000 woningen, een krap budget en een college dat resultaat wil zien. Wij snappen dat een creatieve broedplaats dan voelt als een luxe die in de weg staat.</p>
+        <p>Maar wat als Vechtclub XL juist je beste argument is? Een plek die de wijk áf laat voelen voordat de eerste bewoner intrekt, die je woningen onderscheidend maakt én het cultuur- en broedplaatsbeleid invult — in hetzelfde project, zonder extra subsidielast.</p>
+        <p class="sign">— Groep 36, namens de makers van Vechtclub XL</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== VISIE / DROOM ============================== -->
+<section class="page light" id="visie">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="num">01</span><h2>Onze droom: een plek waar iedereen profijt heeft.</h2></div>
+    <p class="sub reveal">Brede welvaart is meer dan economische groei. Het is leefbaarheid, ontmoeting, gezondheid, duurzaamheid en sociale verbinding. Vechtclub XL bewijst dat die waarden niet botsen met woningbouw — ze maken de wijk juist de moeite waard.</p>
+    <div class="dream">
+      <div class="reveal left">
+        <p class="quote">Geen tijdelijk experiment, maar de <em>motor</em> van een multifunctionele stadswijk waar wonen, werken en ontmoeten in balans zijn.</p>
+        <p>De kracht zit niet in de gebouwen, maar in de mensen die er samenkomen: makers, ondernemers, bewoners, studenten en maatschappelijke partners. Een vershal, een brouwerij, stadslandbouw, horeca, ateliers en evenementen — samen een ontmoetingsplek waar de hele buurt op vooruitgaat. Onze strategie is simpel: <b>behouden, versterken, verbinden.</b></p>
+      </div>
+      <figure class="reveal right">
+        <div class="imgwrap"><img src="Fotos%20website/vc-hal.jpg" alt="De karakteristieke hal van Vechtclub XL"></div>
+        <figcaption>De karakteristieke hallen — industrieel erfgoed, opnieuw in gebruik als werk- en ontmoetingsplek.</figcaption>
+      </figure>
+    </div>
+    <div class="stel">
+      <div class="card reveal zoom" data-delay="1"><div class="tag">Stelling 01</div><h3>Behoud is geen kostenpost, maar een investering.</h3><p>De broedplaats maakt de wijk aantrekkelijk vóórdat er iemand woont. Dat verhoogt de waarde per m² van de woningen. Wie te vroeg wegprijst, verliest geld.</p></div>
+      <div class="card reveal zoom" data-delay="2"><div class="tag">Stelling 02</div><h3>Tijdelijkheid is de grootste bedreiging.</h3><p>Aflopende contracten en beleidsafhankelijkheid maken makers kwetsbaar. Echte waarde ontstaat alleen met langjarige zekerheid en verankering in het plan.</p></div>
+      <div class="card reveal zoom" data-delay="3"><div class="tag">Stelling 03</div><h3>De begane grond is het gezicht van de wijk.</h3><p>Wie hier komt — welke makers, welke horeca, welk publiek programma — bepaalt of de nieuwe wijk karakter krijgt of een anonieme nieuwbouwbuurt wordt.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== MEERWAARDE ============================== -->
+<section class="page light" id="meerwaarde">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="num">02</span><h2>Waarom dit échte meerwaarde levert.</h2></div>
+    <p class="sub reveal">Geen vaag idealisme. Vechtclub XL creëert meervoudige waarde — economisch, sociaal én ecologisch tegelijk. Dat is precies wat brede welvaart vraagt.</p>
+    <div class="pillars">
+      <article class="pillar reveal" data-delay="1">
+        <div class="ph"><img src="Fotos%20website/D1-Creatieve-broedplaatsen.png" alt="Economische waarde"></div>
+        <div class="pb"><span class="badge b-eco">ECONOMISCH</span><h3>Een onderscheidend product</h3><p>140 ondernemers, werkgelegenheid en innovatie. De broedplaats is een marketingasset die het risico van de grondexploitatie verlaagt en een hogere m²-prijs rechtvaardigt.</p></div>
+      </article>
+      <article class="pillar reveal" data-delay="2">
+        <div class="ph"><img src="Fotos%20website/vc-ontmoeting.jpg" alt="Sociale waarde — ontmoeting en samenwerking"></div>
+        <div class="pb"><span class="badge b-soc">SOCIAAL</span><h3>Een wijk die meteen leeft</h3><p>Ontmoeting, cultuur, evenementen en een verbinding met het Grafisch Lyceum Utrecht. Sociale cohesie en levendigheid die je niet achteraf kunt bijbouwen.</p></div>
+      </article>
+      <article class="pillar reveal" data-delay="3">
+        <div class="ph"><img src="Fotos%20website/Beleidsmatig.png" alt="Ecologische waarde"></div>
+        <div class="pb"><span class="badge b-grn">ECOLOGISCH</span><h3>Circulair van zichzelf</h3><p>Hergebruik van het oude OPG-pand betekent minder sloopafval, minder nieuwe grondstoffen en minder leegstand. Duurzaamheid die al gebouwd is.</p></div>
+      </article>
+    </div>
+
+    <div class="balance reveal zoom">
+      <div>
+        <h3>De broedplaats <em>levert meer op</em> dan ze kost.</h3>
+        <p class="sub" style="color:#cfc8b8">Zolang je haar niet te vroeg wegprijst. Behoud is geen subsidiepost — het is een investering die zich terugverdient in een aantrekkelijker, waardevaster gebied.</p>
+      </div>
+      <div class="bars">
+        <div class="row"><div class="lab"><span>Wat het kost</span><span>beheer & ruimte</span></div><div class="track"><div class="fill kost" data-w="32"></div></div></div>
+        <div class="row"><div class="lab"><span>Wat het oplevert</span><span>m²-waarde · imago · welvaart</span></div><div class="track"><div class="fill opbrengst" data-w="92"></div></div></div>
+      </div>
+    </div>
+
+    <!-- MEETMODEL -->
+    <div class="sec-head reveal" style="margin-top:64px"><span class="num">✦</span><h2>En we maken die waarde meetbaar.</h2></div>
+    <p class="sub reveal">Brede welvaart is geen onderbuikgevoel. Met dit meetmodel uit onze Value Case houden we jaarlijks bij of de waarde van Vechtclub XL écht groeit — en sturen we bij waar nodig.</p>
+
+    <div class="dash reveal zoom">
+      <div class="dash-top">
+        <div><p class="eyebrow">Brede welvaart · Merwedekanaalzone Utrecht</p><h3>Meetmodel Vechtclub XL</h3></div>
+        <span class="save">Jaarlijkse meting · i.s.m. Gemeente Utrecht</span>
+      </div>
+      <div class="dash-body">
+        <!-- LEFT: KPI's -->
+        <div class="dash-col">
+          <div class="coltitle">Kern-indicatoren (KPI's)</div>
+          <div class="kpi" style="--k:#2f6fb0" data-th="85" data-unit="%" data-dec="0">
+            <div class="top"><h4>Bezette betaalbare werkruimte</h4><span class="val"><span class="num">88</span><span class="unit">%</span> <span class="badge"></span></span></div>
+            <div class="desc">Betaalbare ruimte beschikbaar én bezet</div>
+            <input type="range" min="50" max="100" value="88">
+            <div class="scale"><span>50</span><span class="drempel">drempel: &lt; 85%</span><span>100</span></div>
+          </div>
+          <div class="kpi" style="--k:#6b3fa0" data-th="2" data-unit=" jaar" data-dec="1">
+            <div class="top"><h4>Gem. verblijfsduur huurders</h4><span class="val"><span class="num">3.5</span><span class="unit">jaar</span> <span class="badge"></span></span></div>
+            <div class="desc">Stabiliteit en vertrouwen van huurders</div>
+            <input type="range" min="0" max="8" step="0.1" value="3.5">
+            <div class="scale"><span>0</span><span class="drempel">drempel: &lt; 2 jaar</span><span>8</span></div>
+          </div>
+          <div class="kpi" style="--k:#e07b1a" data-th="10" data-unit="/jaar" data-dec="0">
+            <div class="top"><h4>Samenwerkingsprojecten</h4><span class="val"><span class="num">15</span><span class="unit">/jaar</span> <span class="badge"></span></span></div>
+            <div class="desc">Samenwerking tussen huurders</div>
+            <input type="range" min="0" max="30" value="15">
+            <div class="scale"><span>0</span><span class="drempel">drempel: &lt; 10/jaar</span><span>30</span></div>
+          </div>
+          <div class="kpi" style="--k:#d6357e" data-th="20" data-unit="/jaar" data-dec="0">
+            <div class="top"><h4>Culturele evenementen</h4><span class="val"><span class="num">28</span><span class="unit">/jaar</span> <span class="badge"></span></span></div>
+            <div class="desc">Zichtbare verbinding met publiek</div>
+            <input type="range" min="0" max="50" value="28">
+            <div class="scale"><span>0</span><span class="drempel">drempel: &lt; 20/jaar</span><span>50</span></div>
+          </div>
+          <div class="kpi" style="--k:#3f7d54" data-th="70" data-unit="%" data-dec="0">
+            <div class="top"><h4>Huurders actief in keten</h4><span class="val"><span class="num">78</span><span class="unit">%</span> <span class="badge"></span></span></div>
+            <div class="desc">Diversiteit in creatieve keten</div>
+            <input type="range" min="0" max="100" value="78">
+            <div class="scale"><span>0</span><span class="drempel">drempel: &lt; 70%</span><span>100</span></div>
+          </div>
+          <div class="kpi" style="--k:#d9a521" data-th="" data-unit="/10" data-dec="1">
+            <div class="top"><h4>Kennisontwikkeling</h4><span class="val"><span class="num">6.0</span><span class="unit">/10</span> <span class="badge"></span></span></div>
+            <div class="desc">Expert oordeel — geen directe KPI</div>
+            <input type="range" min="0" max="10" step="0.1" value="6">
+            <div class="scale"><span>0</span><span>score 0–10</span><span>10</span></div>
+          </div>
+        </div>
+        <!-- RIGHT: Waardeprofiel -->
+        <div class="dash-col">
+          <div class="coltitle">Waardeprofiel</div>
+          <svg class="radar" viewBox="0 0 320 300" xmlns="http://www.w3.org/2000/svg">
+            <polygon class="grid" points="160,40 255.3,95 255.3,205 160,260 64.7,205 64.7,95"/>
+            <polygon class="grid" points="160,84 217.2,117 217.2,183 160,216 102.8,183 102.8,117"/>
+            <polygon class="grid" points="160,117 188.6,133.5 188.6,166.5 160,183 131.4,166.5 131.4,133.5"/>
+            <line class="axis" x1="160" y1="150" x2="160" y2="40"/>
+            <line class="axis" x1="160" y1="150" x2="255.3" y2="95"/>
+            <line class="axis" x1="160" y1="150" x2="255.3" y2="205"/>
+            <line class="axis" x1="160" y1="150" x2="160" y2="260"/>
+            <line class="axis" x1="160" y1="150" x2="64.7" y2="205"/>
+            <line class="axis" x1="160" y1="150" x2="64.7" y2="95"/>
+            <polygon class="area" points="160,53.2 217.2,117 226.7,188.5 160,216 85.7,192.9 104.8,118.1"/>
+            <circle class="pt" cx="160" cy="53.2" r="3"/><circle class="pt" cx="217.2" cy="117" r="3"/>
+            <circle class="pt" cx="226.7" cy="188.5" r="3"/><circle class="pt" cx="160" cy="216" r="3"/>
+            <circle class="pt" cx="85.7" cy="192.9" r="3"/><circle class="pt" cx="104.8" cy="118.1" r="3"/>
+            <text x="160" y="30" text-anchor="middle">Economisch</text>
+            <text x="263" y="92" text-anchor="start">Community</text>
+            <text x="263" y="212" text-anchor="start">Creatief</text>
+            <text x="160" y="278" text-anchor="middle">Kennis</text>
+            <text x="57" y="212" text-anchor="end">Duurzaam</text>
+            <text x="57" y="92" text-anchor="end">Ruimtelijk</text>
+          </svg>
+          <div class="profile">
+            <div class="pbar"><div class="lab"><span style="color:#2f6fb0">● Economische vitaliteit</span><span class="s" style="color:#2f6fb0">8.8</span></div><div class="track"><div class="fill" style="background:#2f6fb0"></div></div></div>
+            <div class="pbar"><div class="lab"><span style="color:#e07b1a">● Community vorming</span><span class="s" style="color:#e07b1a">6.0</span></div><div class="track"><div class="fill" style="background:#e07b1a"></div></div></div>
+            <div class="pbar"><div class="lab"><span style="color:#d6357e">● Creatieve identiteit</span><span class="s" style="color:#d6357e">7.0</span></div><div class="track"><div class="fill" style="background:#d6357e"></div></div></div>
+            <div class="pbar"><div class="lab"><span style="color:#d9a521">● Kennisontwikkeling</span><span class="s" style="color:#d9a521">6.0</span></div><div class="track"><div class="fill" style="background:#d9a521"></div></div></div>
+            <div class="pbar"><div class="lab"><span style="color:#3f7d54">● Duurzame ontwikkeling</span><span class="s" style="color:#3f7d54">7.8</span></div><div class="track"><div class="fill" style="background:#3f7d54"></div></div></div>
+            <div class="pbar"><div class="lab"><span style="color:#6b3fa0">● Ruimtelijke kwaliteit</span><span class="s" style="color:#6b3fa0">5.8</span></div><div class="track"><div class="fill" style="background:#6b3fa0"></div></div></div>
+          </div>
+          <div class="status-ok" id="dashStatus">✓ Alle KPI's boven drempelwaarde — geen actiepunten</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="coltitle reveal" style="margin-top:30px">Cyclisch meetproces (7 stappen)</div>
+    <div class="steps">
+      <div class="step reveal" data-delay="1"><div class="no">1</div><h5>Definieer waarden</h5><p>Welke waardetypen zijn relevant?</p></div>
+      <div class="step reveal" data-delay="1"><div class="no">2</div><h5>Verbind dimensies</h5><p>Koppel aan meetbare dimensies</p></div>
+      <div class="step reveal" data-delay="2"><div class="no">3</div><h5>Formuleer indicatoren</h5><p>Wat, bij wie, hoe vaak?</p></div>
+      <div class="step reveal" data-delay="2"><div class="no">4</div><h5>Koppel instrumenten</h5><p>Enquête, registratie, observatie</p></div>
+      <div class="step reveal" data-delay="3"><div class="no">5</div><h5>Verzamel data</h5><p>Voer de jaarlijkse meting uit</p></div>
+      <div class="step reveal" data-delay="3"><div class="no">6</div><h5>Analyseer</h5><p>Vergelijk met nulmeting</p></div>
+      <div class="step reveal" data-delay="4"><div class="no">7</div><h5>Rapporteer & stuur</h5><p>Waarderapport naar stakeholders</p></div>
+    </div>
+
+    <div class="pagebreak"><a class="btn btn-primary" href="#pagina2">Ga naar pagina 2 — onze oproep aan de gemeente →</a></div>
+  </div>
+</section>
+
+<!-- ============================== PAGINA 2 ============================== -->
+<section class="page light" id="pagina2">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="num">03</span><h2>Wat ons onderzoek bewijst.</h2></div>
+    <p class="sub reveal">Onze Verkenning en Value Case laten één lijn zien: maakbedrijven en broedplaatsen dragen aantoonbaar bij aan brede welvaart — maar verdwijnen zonder bescherming. De casus Vechtclub XL maakt dat concreet.</p>
+    <div class="args">
+      <article class="arg reveal" data-delay="1"><div class="ph"><img src="Fotos%20website/Een-broedplaats-onder-druk.png" alt="Broedplaats onder druk"></div><div class="body"><h3>De druk is reëel</h3><p>Stijgende vastgoedprijzen, woningbouw en aflopende contracten verdringen betaalbare werkruimte. Niet alleen hier — in Amsterdam, Rotterdam en heel Nederland verdwijnen makers uit de stad.</p><span class="data">SWOT · grootste bedreiging</span></div></article>
+      <article class="arg reveal" data-delay="2"><div class="ph"><img src="Fotos%20website/Stakeholders%20tabel%20foto.png" alt="Stakeholders"></div><div class="body"><h3>Iedereen wint samen</h3><p>Ontwikkelaar, gemeente, makers, bewoners, onderwijs en vastgoedeigenaren: de stakeholderanalyse laat zien dat hun belangen elkaar versterken in plaats van uitsluiten.</p><span class="data">Verkenning · stakeholderanalyse</span></div></article>
+      <article class="arg reveal" data-delay="3"><div class="ph"><img src="Fotos%20website/Rol%20overheid.png" alt="Rol van de overheid"></div><div class="body"><h3>De gemeente heeft de sleutels</h3><p>Via bestemmingsplannen, grondexploitatie, vastgoedbeleid en het Convenant Broedplaatsennetwerk Utrecht (2026–2029) bepaalt de gemeente of creatieve ruimte blijft bestaan.</p><span class="data">Verkenning · rol overheid</span></div></article>
+      <article class="arg reveal" data-delay="4"><div class="ph"><img src="Fotos%20website/vc-buitenterrein.jpg" alt="Levendig buitenterrein van Vechtclub XL"></div><div class="body"><h3>Een levend ecosysteem</h3><p>Op loopafstand ligt het Grafisch Lyceum Utrecht. Structurele verbinding levert stages, talentontwikkeling en praktijkgericht leren — onderwijs en stad versterken elkaar.</p><span class="data">Voorkeursscenario · scaling futures</span></div></article>
+    </div>
+
+    <div class="pull reveal"><blockquote>"De broedplaats levert meer op dan ze kost — zolang je haar niet te vroeg wegprijst."</blockquote><cite>— Uit het BMT-model & de Value Case van Groep 36</cite></div>
+
+    <div class="sec-head reveal"><span class="num">→</span><h2>De lessen.</h2></div>
+    <div class="lessons">
+      <div class="lesson reveal" data-delay="1"><span class="b">A</span><p>Wat we tijdelijk noemen, blijkt onmisbaar. Behandel de broedplaats als permanent fundament, niet als tussenfase.</p></div>
+      <div class="lesson reveal" data-delay="2"><span class="b">B</span><p>Zachte waarden hebben harde bescherming nodig: zonder beheer, selectie en langjarige afspraken verwatert de plek.</p></div>
+      <div class="lesson reveal" data-delay="3"><span class="b">C</span><p>Samenwerking is geen kostenpost maar het verdienmodel. Ontwikkelaar, gemeente én makers winnen samen, of niemand wint.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== OPROEP ============================== -->
+<section class="page" id="oproep">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="num" style="color:var(--accent-2)">04</span><h2>Onze oproep aan jou, en aan Utrecht.</h2></div>
+    <p class="sub reveal">Vijf concrete stappen. Wat, waarom en hoe — te nemen in dit planproces, niet erna.</p>
+    <div class="calls">
+      <div class="call reveal" data-delay="1"><div><h3>Veranker permanent in het stedenbouwkundig plan</h3><p>Vervang tijdelijke contracten door langjarige zekerheid, zodat makers durven te investeren en de plek niet om de paar jaar opnieuw moet vechten voor haar bestaan.</p></div></div>
+      <div class="call reveal" data-delay="2"><div><h3>Reken de broedplaats als waarde, niet als kostenpost</h3><p>Neem Vechtclub XL op in de grondexploitatie als marketingasset. Het onderscheidend vermogen verlaagt het risico én rechtvaardigt een hogere prijs per m².</p></div></div>
+      <div class="call reveal" data-delay="3"><div><h3>Richt een beheerstichting op</h3><p>Laat een onafhankelijke stichting de gemeenschap beheren, huurders selecteren en de zachte waarden bewaken — jouw partner voor het langetermijnbeheer.</p></div></div>
+      <div class="call reveal" data-delay="4"><div><h3>Programmeer de begane grond als publiek hart</h3><p>Maak vroeg in het proces de actieve keuze voor makers, horeca en publiek programma op de plint. Dat bepaalt het karakter van de hele wijk.</p></div></div>
+      <div class="call reveal" data-delay="5" style="grid-column:1/-1"><div><h3>Verbind onderwijs en stad structureel</h3><p>Koppel het Grafisch Lyceum Utrecht en andere instellingen aan de locatie. Zo wordt Vechtclub XL een leerplek én een motor voor talent en brede welvaart.</p></div></div>
+    </div>
+    <div class="kern">
+      <p class="eyebrow reveal">De kernboodschap</p>
+      <h2 class="reveal zoom">Bouw de stad <em>om de plek heen</em> — niet over de plek heen.</h2>
+      <p class="signoff reveal">Vince de Haan · Lorenz Dado · Mees Erich · Dennis Arkenbout · Cas Beeke · Lotte Scherpenzeel — Groep 36, Hogeschool Rotterdam</p>
+      <div class="cta-row reveal" style="justify-content:center"><a class="btn btn-primary" href="#hero">↑ Terug naar pagina 1</a></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span><b>Manifest Vechtclub XL</b> — Kennissymposium · IGOOOG25 Groep 36</span>
+    <span>Op basis van de Verkenning, Value Case & het BMT-model · Merwedekanaalzone, Utrecht</span>
+  </div>
+</footer>
+
+<script>
+  // scroll progress bar
+  const bar=document.getElementById('bar');
+  addEventListener('scroll',()=>{
+    const h=document.documentElement;
+    bar.style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight)*100)+'%';
+    const on2=document.getElementById('pagina2').getBoundingClientRect().top<innerHeight*.5;
+    links[0].classList.toggle('active',!on2);links[1].classList.toggle('active',on2);
+  });
+  const links=document.querySelectorAll('nav .pages a');
+
+  // reveal + trigger counters/bars on view
+  const io=new IntersectionObserver((es)=>es.forEach(e=>{
+    if(!e.isIntersecting)return;
+    e.target.classList.add('in');
+    e.target.querySelectorAll?.('.count').forEach(runCount);
+    e.target.querySelectorAll?.('.fill[data-w]').forEach(f=>f.style.width=f.dataset.w+'%');
+    io.unobserve(e.target);
+  }),{threshold:.18});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+  document.querySelectorAll('.balance').forEach(el=>io.observe(el));
+
+  // ===== Meetmodel: live, gekoppelde KPI's =====
+  (function(){
+    const kpiEls=[...document.querySelectorAll('.kpi')];
+    if(!kpiEls.length)return;
+    const inputs=kpiEls.map(k=>k.querySelector('input'));
+    const mins=inputs.map(i=>+i.min), maxs=inputs.map(i=>+i.max);
+    const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+    const norm=i=>(+inputs[i].value-mins[i])/(maxs[i]-mins[i])*10;          // 0..10
+    const raw =(i,n)=>mins[i]+clamp(n,0,10)/10*(maxs[i]-mins[i]);
+
+    // KPI-index: 0 werkruimte · 1 verblijfsduur · 2 samenwerking · 3 evenementen · 4 keten · 5 kennis
+    const defNorm=[7.6,4.375,5.0,5.6,7.8,6.0];     // genormaliseerde startwaarden
+    const dimPrimary=[0,1,3,5,4,2];                 // welke KPI elke dimensie aandrijft
+    const base=[8.8,6.0,7.0,6.0,7.8,5.8];           // startscores per dimensie (radar-volgorde)
+    const ang=[-90,-30,30,90,150,210].map(d=>d*Math.PI/180);
+    const cx=160,cy=150,R=110;
+
+    // koppelmatrix C[driver][target]: hoeveel een target meebeweegt (verschillende maten)
+    const C=[
+      [0,  .10, .25, .15, .30, .10],
+      [.10, 0,  .30, .10, .20, 0  ],
+      [0,  .15, 0,   .25, .15, .30],
+      [.20,.10, .20, 0,   .10, 0  ],
+      [.25, 0,  .15, 0,   0,   .15],
+      [0,   0,  .25, .20, .10, 0  ]
+    ];
+
+    const area=document.querySelector('.radar polygon.area');
+    const pts=[...document.querySelectorAll('.radar circle.pt')];
+    const bars=[...document.querySelectorAll('.profile .fill')];
+    const scoreEls=[...document.querySelectorAll('.profile .s')];
+
+    let lastNorm=inputs.map((_,i)=>norm(i));
+    let shown=[0,0,0,0,0,0], target=base.slice(), animating=false;
+
+    function updateKpi(i){
+      const k=kpiEls[i],num=k.querySelector('.num'),badge=k.querySelector('.badge'),th=k.dataset.th,dec=+k.dataset.dec;
+      num.textContent=(+inputs[i].value).toFixed(dec).replace('.',',');
+      if(th===''){badge.textContent='';badge.className='badge';}
+      else if(+inputs[i].value>=+th){badge.textContent='✓ OK';badge.className='badge badge-ok';}
+      else{badge.textContent='⚠ actie';badge.className='badge badge-act';}
+    }
+    function refreshStatus(){
+      let issues=0; kpiEls.forEach((k,i)=>{if(k.dataset.th!==''&&+inputs[i].value<+k.dataset.th)issues++;});
+      const s=document.getElementById('dashStatus'); if(!s)return;
+      if(!issues){s.className='status-ok';s.textContent="✓ Alle KPI's boven drempelwaarde — geen actiepunten";}
+      else{s.className='status-ok warn';s.textContent="⚠ "+issues+" KPI('s) onder drempel — actiepunt voor de gemeente";}
+    }
+    function computeTargets(){ for(let k=0;k<6;k++){const i=dimPrimary[k]; target[k]=clamp(base[k]+(norm(i)-defNorm[i]),0,10);} }
+    function draw(){
+      let p='';
+      for(let k=0;k<6;k++){
+        const r=R*shown[k]/10, x=cx+r*Math.cos(ang[k]), y=cy+r*Math.sin(ang[k]);
+        pts[k].setAttribute('cx',x.toFixed(1)); pts[k].setAttribute('cy',y.toFixed(1));
+        p+=x.toFixed(1)+','+y.toFixed(1)+' ';
+        bars[k].style.width=(shown[k]*10)+'%';
+        scoreEls[k].textContent=shown[k].toFixed(1).replace('.',',');
+      }
+      area.setAttribute('points',p.trim());
+    }
+    function frame(){
+      let moving=false;
+      for(let k=0;k<6;k++){const d=target[k]-shown[k]; if(Math.abs(d)>0.02){shown[k]+=d*0.22;moving=true;}else shown[k]=target[k];}
+      draw(); if(moving)requestAnimationFrame(frame); else animating=false;
+    }
+    function kick(){ if(!animating){animating=true;requestAnimationFrame(frame);} }
+
+    inputs.forEach((inp,d)=>inp.addEventListener('input',()=>{
+      const dn=norm(d)-lastNorm[d];                       // verandering van de versleepte KPI
+      for(let t=0;t<6;t++){ if(t===d||!C[d][t])continue;  // koppel de andere KPI's mee
+        inputs[t].value=raw(t, lastNorm[t]+C[d][t]*dn);
+      }
+      for(let i=0;i<6;i++){updateKpi(i); lastNorm[i]=norm(i);}
+      refreshStatus(); computeTargets(); kick();
+    }));
+
+    inputs.forEach((_,i)=>updateKpi(i));
+    refreshStatus(); computeTargets(); kick();          // intro: animeer van 0 naar startwaarden
+  })();
+
+  function runCount(el){
+    if(el.dataset.done)return; el.dataset.done=1;
+    const to=+el.dataset.to,dur=1400,t0=performance.now();
+    (function step(t){
+      const p=Math.min((t-t0)/dur,1),val=Math.floor((1-Math.pow(1-p,3))*to);
+      el.textContent=val.toLocaleString('nl-NL');
+      if(p<1)requestAnimationFrame(step);
+    })(t0);
+  }
+</script>
+</body>
+</html>
