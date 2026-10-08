@@ -1,0 +1,2114 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Stratenspel: het klassieke Nederlandse vastgoed-bordspel in de browser, samen of tegen de computer.">
+<title>Stratenspel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: bord links zo groot mogelijk, zijpaneel rechts; onder 1024px bord bovenaan met vaste actiebalk */
+:root{
+  --page:#F4F6F3; --surface:#FFFFFF; --tile:#FBFCFA; --tile2:#EEF3EF; --line:#DCE3DF;
+  --felt:#1E3B36; --felt2:#2D5A51; --jail:#F8E2CB;
+  --fg:#1B2422; --muted:#5C6B66; --accent:#1F7A5C; --accent-fg:#FFFFFF; --accent-soft:#E1F0E8;
+  --pos:#1A7F4B; --neg:#C93C3C; --scrim:rgba(12,24,21,.42); --toast:#1B2422; --toast-fg:#F4F6F3;
+  --g-bruin:#8C5A3C; --g-lichtblauw:#7CC6E8; --g-roze:#D6589C; --g-oranje:#F28C38; --g-rood:#E04848; --g-geel:#F2C531; --g-groen:#2EA66B; --g-donkerblauw:#2F5DA8;
+  --chance:#F2994A; --chest:#4A7FC1; --station:#3A4744; --station-t:#FFFFFF; --utility:#2A9D8F; --house:#2EA66B; --hotel:#E04848;
+  --shadow:0 18px 40px rgba(20,45,38,.16); --shadow-s:0 2px 10px rgba(20,45,38,.10);
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"DM Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page:#111816; --surface:#18211E; --tile:#1E2926; --tile2:#162020; --line:#2A3632;
+    --felt:#09110F; --felt2:#173129; --jail:#3D2F22;
+    --fg:#E6EEEA; --muted:#9AABA4; --accent:#4CC79A; --accent-fg:#0D1512; --accent-soft:#1C3A2F;
+    --pos:#5FD3A4; --neg:#F07A7A; --scrim:rgba(0,0,0,.55); --toast:#E6EEEA; --toast-fg:#111816;
+    --g-bruin:#B07650; --g-lichtblauw:#8DD2F0; --g-roze:#E36AAB; --g-oranje:#F79A4B; --g-rood:#EC5C5C; --g-geel:#F5CE45; --g-groen:#3BBE7C; --g-donkerblauw:#4E80D6;
+    --station:#B8C6C1; --station-t:#111816;
+    --shadow:0 18px 40px rgba(0,0,0,.45); --shadow-s:0 2px 10px rgba(0,0,0,.35);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --page:#111816; --surface:#18211E; --tile:#1E2926; --tile2:#162020; --line:#2A3632;
+  --felt:#09110F; --felt2:#173129; --jail:#3D2F22;
+  --fg:#E6EEEA; --muted:#9AABA4; --accent:#4CC79A; --accent-fg:#0D1512; --accent-soft:#1C3A2F;
+  --pos:#5FD3A4; --neg:#F07A7A; --scrim:rgba(0,0,0,.55); --toast:#E6EEEA; --toast-fg:#111816;
+  --g-bruin:#B07650; --g-lichtblauw:#8DD2F0; --g-roze:#E36AAB; --g-oranje:#F79A4B; --g-rood:#EC5C5C; --g-geel:#F5CE45; --g-groen:#3BBE7C; --g-donkerblauw:#4E80D6;
+  --station:#B8C6C1; --station-t:#111816;
+  --shadow:0 18px 40px rgba(0,0,0,.45); --shadow-s:0 2px 10px rgba(0,0,0,.35);
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--page);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box}
+button,input,select{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+.muted{color:var(--muted)} .small{font-size:13px}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--muted);margin:0 0 6px;display:flex;align-items:center;gap:8px}
+.eyebrow .pawn{width:20px;height:20px}
+.ico{width:20px;height:20px;flex:none}
+.pawn{display:block;flex:none}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* Knoppen */
+.btn{min-height:44px;padding:10px 16px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font-weight:600;font-size:15px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .12s,border-color .15s,background .15s;text-align:center}
+.btn:hover{border-color:var(--muted)}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:transparent;box-shadow:0 6px 16px -6px var(--accent)}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.big{min-height:52px;font-size:16px;padding:12px 20px}
+.btn.s{min-height:40px;padding:6px 12px;font-size:14px;border-radius:10px}
+.btn.danger{color:var(--neg);border-color:var(--neg)}
+.btn.light{background:#fff;color:#1B2422;border-color:transparent}
+.btn.is-disabled{opacity:.42;cursor:not-allowed;box-shadow:none}
+.btn:focus-visible,.iconbtn:focus-visible,.tile:focus-visible,.pc:focus-visible,.chip:focus-visible,.mode:focus-visible,.pawnbtn:focus-visible,.seg button:focus-visible,.tabs button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btn .ico{width:18px;height:18px}
+.iconbtn{min-width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--fg);display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;padding:0 10px;font-weight:600;font-size:14px}
+.iconbtn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--fg)}
+.btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.btns .btn{flex:1 1 auto}
+.inp{min-height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--tile);color:var(--fg);width:100%}
+.inp:focus{outline:2px solid var(--accent);outline-offset:0}
+
+/* ---------- Startscherm ---------- */
+#setup{max-width:1000px;margin:0 auto;padding-inline:16px;padding-block:24px 56px;display:grid;gap:22px}
+.hero{position:relative;border-radius:26px;overflow:hidden;background:radial-gradient(120% 120% at 15% 10%,var(--felt2),var(--felt));color:#F2F7F4;padding:44px 32px;min-height:280px;display:flex;align-items:center}
+.hero::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 46px,rgba(255,255,255,.035) 46px 48px);pointer-events:none}
+.hero-txt{position:relative;z-index:1;max-width:520px}
+.hero h1{font-size:clamp(46px,9vw,92px);font-weight:800;line-height:.92;letter-spacing:-.03em}
+.hero .lede{font-size:17px;opacity:.86;margin:14px 0 0;max-width:44ch}
+.hero .eyebrow{color:#BFE3D2}
+.strip8{display:flex;gap:4px;margin-top:22px}
+.strip8 i{width:26px;height:8px;border-radius:3px}
+.fdecks{position:absolute;right:4%;top:50%;width:330px;height:240px;transform:translateY(-50%)}
+.fdeed{position:absolute;width:132px;border-radius:12px;background:#FBFCFA;color:#1B2422;box-shadow:0 18px 30px rgba(0,0,0,.35);overflow:hidden;animation:floaty 7s ease-in-out infinite}
+.fdeed:nth-child(1){left:0;top:40px;--r:-10deg}
+.fdeed:nth-child(2){left:98px;top:0;--r:4deg;animation-delay:-2.3s}
+.fdeed:nth-child(3){left:196px;top:58px;--r:12deg;animation-delay:-4.6s}
+.fd-h{padding:12px 10px;text-align:center}
+.fd-h small{display:block;font-size:8px;letter-spacing:.14em;text-transform:uppercase;opacity:.8}
+.fd-h b{display:block;font-family:var(--display);font-size:16px;line-height:1.1;margin-top:2px}
+.fd-h span{font-size:10px;opacity:.85}
+.fd-b{display:grid;grid-template-columns:1fr auto;gap:4px 8px;padding:10px 12px 12px;font-size:11px}
+.fd-b span:nth-child(even){font-family:var(--mono)}
+@keyframes floaty{0%,100%{transform:rotate(var(--r)) translateY(0)}50%{transform:rotate(var(--r)) translateY(-10px)}}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.mode{text-align:left;padding:22px;border-radius:20px;border:2px solid var(--line);background:var(--surface);cursor:pointer;display:grid;grid-template-columns:52px 1fr;gap:4px 16px;align-items:start;transition:border-color .15s,box-shadow .15s,transform .15s}
+.mode:hover{transform:translateY(-2px);box-shadow:var(--shadow-s)}
+.mode .mi{grid-row:span 2;width:52px;height:52px;border-radius:14px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center}
+.mode .mi .ico{width:28px;height:28px}
+.mode h3{font-size:22px;font-weight:700}
+.mode p{margin:0;color:var(--muted)}
+.mode.sel{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.config{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:20px;display:grid;gap:16px}
+.tabs{display:inline-flex;background:var(--tile2);border-radius:12px;padding:4px;gap:4px;justify-self:start}
+.tabs button{border:0;background:transparent;border-radius:9px;min-height:40px;padding:0 16px;font-weight:600;color:var(--muted);cursor:pointer}
+.tabs button.on{background:var(--surface);color:var(--fg);box-shadow:var(--shadow-s)}
+.plist{display:grid;gap:10px}
+.prow{display:grid;grid-template-columns:48px minmax(0,1fr) auto minmax(120px,auto) 44px;gap:10px;align-items:center;padding:8px;border:1px solid var(--line);border-radius:14px;background:var(--tile)}
+.pawnbtn{width:48px;height:48px;border:0;background:transparent;padding:0;cursor:pointer;border-radius:50%}
+.pawnbtn .pawn{width:44px;height:44px;margin:2px;transition:transform .2s}
+.pawnbtn:hover .pawn{transform:rotate(-12deg) scale(1.06)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.seg button{min-height:42px;padding:0 12px;border:0;background:transparent;font-weight:600;font-size:14px;color:var(--muted);cursor:pointer}
+.seg button.on{background:var(--accent);color:var(--accent-fg)}
+.cfg-foot{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:16px}
+.cfg-foot p{margin:0;min-width:0}
+.setrow{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:12px 0;border-bottom:1px solid var(--line)}
+.setrow:last-child{border-bottom:0}
+.setrow label{display:grid;gap:2px;min-width:0}
+.setrow label span{font-size:13px;color:var(--muted)}
+.setrow .inp{width:auto;min-width:130px}
+.switch{appearance:none;-webkit-appearance:none;width:50px;height:30px;border-radius:99px;background:var(--line);position:relative;cursor:pointer;flex:none;transition:background .15s;margin:0}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .15s}
+.switch:checked{background:var(--accent)}
+.switch:checked::after{transform:translateX(20px)}
+.switch:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* ---------- Spelscherm ---------- */
+#game{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,370px);grid-template-rows:auto 1fr;grid-template-areas:"top top" "board side";gap:12px 22px;padding-inline:16px;padding-block:0 16px;min-height:100%}
+.top{grid-area:top;display:flex;align-items:center;gap:10px;padding-block:10px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:-.02em;margin-right:auto}
+.brand i{width:28px;height:28px;border-radius:8px;background:conic-gradient(var(--g-rood) 0 25%,var(--g-geel) 0 50%,var(--g-groen) 0 75%,var(--g-donkerblauw) 0);display:block;transform:rotate(45deg) scale(.8)}
+.tinfo{font-family:var(--mono);font-size:13px;color:var(--muted);padding:6px 10px;border-radius:99px;background:var(--surface);border:1px solid var(--line)}
+.tbtns{display:flex;gap:6px;flex-wrap:wrap}
+.chips{grid-area:chips;display:none}
+.boardArea{grid-area:board;min-width:0;display:flex;justify-content:center;align-items:flex-start}
+.side{grid-area:side;display:flex;flex-direction:column;gap:12px;min-width:0}
+
+/* Bord */
+.board{position:relative;width:var(--size,620px);height:var(--size,620px);padding:var(--pad,8px);border-radius:22px;background:radial-gradient(110% 90% at 50% 38%,var(--felt2),var(--felt));box-shadow:var(--shadow);flex:none}
+.grid{display:grid;grid-template-columns:1.6fr repeat(9,1fr) 1.6fr;grid-template-rows:1.6fr repeat(9,1fr) 1.6fr;gap:2px;width:100%;height:100%}
+.tile{position:relative;background:var(--tile);border-radius:5px;overflow:hidden;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease,opacity .2s;outline:none}
+.tile:hover{transform:scale(1.04);z-index:4;box-shadow:0 8px 18px rgba(0,0,0,.28)}
+.in{position:absolute;left:50%;top:50%;width:var(--c);height:var(--k);transform:translate(-50%,-50%) rotate(var(--rot,0deg));display:flex;flex-direction:column;align-items:center;text-align:center}
+.s-l{--rot:90deg}.s-t{--rot:180deg}.s-r{--rot:-90deg}
+.bar{flex:0 0 22%;width:100%;display:flex;align-items:center;justify-content:center;border-radius:4px 4px 0 0}
+.bld{display:flex;gap:1px;align-items:center;justify-content:center;height:74%}
+.bld svg{height:100%;width:auto;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
+.bld svg.drop{animation:drop .45s cubic-bezier(.3,1.6,.5,1)}
+@keyframes drop{0%{transform:translateY(-140%);opacity:0}100%{transform:none;opacity:1}}
+.nm{font-weight:700;font-size:max(6px,calc(var(--c)*.128));line-height:1.08;letter-spacing:.02em;text-transform:uppercase;padding:0 3px;margin-top:9%;overflow-wrap:break-word;hyphens:manual;max-width:100%}
+.nm.top{margin-top:11%}
+.city{font-size:max(5px,calc(var(--c)*.098));color:var(--muted);margin-top:3%}
+.pr{margin-top:auto;margin-bottom:12%;font-family:var(--mono);font-weight:600;font-size:max(6px,calc(var(--c)*.118))}
+.ic{width:calc(var(--c)*.5);height:calc(var(--c)*.5);margin-top:auto;color:var(--station)}
+.ic svg{width:100%;height:100%}
+.ic.big{width:calc(var(--c)*.66);height:calc(var(--c)*.66);margin-block:auto 22%}
+.ic.ch{color:var(--chance)} .ic.cf{color:var(--chest)} .ic.ut{color:var(--utility)} .ic.tx{color:var(--muted)}
+.own{position:absolute;left:0;right:0;bottom:0;height:8%;background:var(--oc,transparent);transition:background .3s}
+.mtag{display:none}
+.tile.mort{background-image:repeating-linear-gradient(135deg,transparent 0 6px,rgba(201,60,60,.10) 6px 8px)}
+.tile.mort .in>:not(.own):not(.mtag){opacity:.35}
+.tile.mort .mtag{display:block;position:absolute;left:6%;right:6%;top:44%;transform:rotate(-24deg);font-weight:700;font-size:max(6px,calc(var(--c)*.1));text-transform:uppercase;letter-spacing:.04em;color:var(--neg);border:1.5px solid var(--neg);border-radius:4px;background:var(--tile);padding:1px 0}
+.cn{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3%;text-align:center;font-weight:700;font-size:max(7px,calc(var(--k)*.085));line-height:1.1;padding:6%}
+.cn .ico{width:42%;height:auto}
+.cn b{font-family:var(--display);font-weight:800}
+.cn.start{color:var(--g-rood)}
+.cn.start b{font-size:calc(var(--k)*.24);letter-spacing:-.02em}
+.cn.start .cs{color:var(--fg)}
+.cn.start .ico{width:60%;stroke-width:2.6}
+.cn.park .ico{color:var(--g-rood)}
+.cn.gojail .ico{color:var(--chest)}
+.cn .pot{font-family:var(--mono);color:var(--pos);font-size:calc(var(--k)*.1)}
+.cn.jail{padding:0;justify-content:flex-end}
+.cell{position:absolute;right:0;top:0;width:72%;height:72%;background:var(--jail);border-bottom-left-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4%;color:var(--fg)}
+.cell .ico{width:48%;color:var(--g-oranje)}
+.visit{position:absolute;left:0;right:0;bottom:6%;font-size:max(6px,calc(var(--k)*.08));color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.board.compact .nm,.board.compact .city{display:none}
+.board.compact .ic{margin-top:20%;width:calc(var(--c)*.6);height:calc(var(--c)*.6)}
+.board.compact .ic.big{margin-top:auto}
+.board.compact .pr{font-size:max(7px,calc(var(--c)*.24));letter-spacing:-.04em}
+.board.compact .cn .cs,.board.compact .visit,.board.compact .cell span{display:none}
+.board.compact .cn{font-size:max(7px,calc(var(--k)*.12))}
+.tile.glow{animation:glow 1s ease-out}
+@keyframes glow{0%{box-shadow:0 0 0 0 var(--glow)}35%{box-shadow:0 0 0 3px var(--glow),0 0 22px 6px var(--glow)}100%{box-shadow:0 0 0 0 transparent}}
+.board.managing .tile:not(.lit){opacity:.38}
+.tile.lit{box-shadow:0 0 0 3px var(--accent);z-index:3}
+
+.center{grid-area:2/2/11/11;position:relative;background:var(--tile2);border-radius:12px;overflow:hidden;display:grid;place-items:center}
+.wm{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+.wm span{transform:rotate(-45deg);font-family:var(--display);font-weight:800;font-size:calc(var(--c)*1.45);letter-spacing:-.03em;color:var(--fg);opacity:.06;white-space:nowrap}
+.deck{position:absolute;width:calc(var(--c)*2.3);height:calc(var(--c)*1.45);transform:rotate(-45deg)}
+.d-ch{left:6%;top:12%}
+.d-cf{right:6%;bottom:12%}
+.dk{position:absolute;inset:0;border-radius:10px;background:var(--chance);opacity:.35;transform:translate(4px,4px)}
+.dk.b2{opacity:.6;transform:translate(2px,2px)}
+.dk.top{opacity:1;transform:none;display:flex;align-items:center;justify-content:center;gap:6%;color:#fff;font-family:var(--display);font-weight:700;font-size:max(9px,calc(var(--c)*.22));box-shadow:var(--shadow-s)}
+.dk.top .ico{width:30%;height:auto}
+.d-cf .dk{background:var(--chest)}
+.board.compact .dk.top b{display:none}
+.cmid{position:relative;display:flex;flex-direction:column;align-items:center;gap:calc(var(--c)*.16);width:72%}
+.turnlbl{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:99px;padding:4px 14px 4px 4px;box-shadow:var(--shadow-s);font-weight:700;font-size:max(11px,calc(var(--c)*.2));max-width:100%}
+.turnlbl .pawn{width:max(22px,calc(var(--c)*.42));height:max(22px,calc(var(--c)*.42))}
+.turnlbl span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dice{display:flex;gap:calc(var(--c)*.22)}
+.die{width:max(30px,calc(var(--c)*.92));aspect-ratio:1;max-width:100%;background:#FFFFFF;border-radius:22%;box-shadow:0 6px 14px rgba(0,0,0,.2),inset 0 -3px 0 rgba(0,0,0,.08);display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:16%;gap:6%}
+.die i{border-radius:50%}
+.die i.on{background:#1B2422}
+.die.roll{animation:shake .16s infinite}
+.die.land{animation:bounce .4s cubic-bezier(.3,1.7,.5,1)}
+@keyframes shake{0%{transform:rotate(-14deg) translateY(-3px)}50%{transform:rotate(12deg) translateY(2px)}100%{transform:rotate(-14deg) translateY(-3px)}}
+@keyframes bounce{0%{transform:scale(1.25)}60%{transform:scale(.92)}100%{transform:scale(1)}}
+.feed{list-style:none;margin:0;padding:0;width:100%;display:grid;gap:3px;font-size:max(10px,calc(var(--c)*.17))}
+.feed li{display:flex;align-items:center;gap:6px;color:var(--muted);min-width:0}
+.feed li:first-child{color:var(--fg);font-weight:600}
+.feed li .pawn{width:1.35em;height:1.35em}
+.feed li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board.compact .feed li:not(:first-child){display:none}
+
+.tokens,.floats{position:absolute;left:var(--pad);top:var(--pad);right:var(--pad);bottom:var(--pad);pointer-events:none}
+.tok{position:absolute;left:0;top:0;width:var(--t);height:var(--t);transition:transform var(--hop,140ms) ease-out;filter:drop-shadow(0 3px 3px rgba(0,0,0,.35));z-index:5}
+.tok .pawn{width:100%;height:100%}
+.tok.hop .pawn{animation:hop var(--hop,140ms) ease-out}
+@keyframes hop{50%{transform:translateY(-38%) scale(1.08)}}
+.tok.cur::before{content:"";position:absolute;inset:-22%;border-radius:50%;border:2.5px solid var(--pc);animation:pulse 1.5s ease-out infinite}
+@keyframes pulse{0%{transform:scale(.8);opacity:1}100%{transform:scale(1.35);opacity:0}}
+.float{position:absolute;transform:translate(-50%,-50%);font-family:var(--mono);font-weight:600;font-size:14px;color:var(--pos);background:var(--surface);padding:3px 10px;border-radius:99px;box-shadow:var(--shadow-s);animation:rise 1.3s ease-out forwards;white-space:nowrap;z-index:6}
+.float.neg{color:var(--neg)}
+@keyframes rise{0%{opacity:0;margin-top:6px}15%{opacity:1}100%{opacity:0;margin-top:-46px}}
+
+/* Spelers */
+.plist2{display:grid;gap:8px}
+.pc{display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:6px 12px;padding:10px 12px;border-radius:14px;background:var(--surface);border:1px solid var(--line);cursor:pointer;text-align:left;width:100%;transition:box-shadow .2s,opacity .3s}
+.pc .pawn{width:40px;height:40px;grid-row:span 2}
+.pc.on{border-color:var(--pc);box-shadow:0 0 0 2px var(--pc)}
+.pc.bk{opacity:.5;filter:grayscale(1)}
+.pname{display:flex;align-items:center;gap:6px;min-width:0;font-weight:700}
+.pname b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag{font-size:11px;font-weight:600;padding:2px 7px;border-radius:99px;background:var(--tile2);color:var(--muted);white-space:nowrap}
+.tag.warn{background:var(--jail);color:var(--fg)}
+.tag.bad{background:var(--neg);color:#fff}
+.money{font-family:var(--mono);font-weight:600;font-size:16px;font-variant-numeric:tabular-nums;transition:color .3s;justify-self:end}
+.money.up{color:var(--pos)} .money.down{color:var(--neg)}
+.groups{grid-column:2/4;display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.gb{display:flex;gap:1.5px;padding:2px;border-radius:4px}
+.gb i{width:9px;height:9px;border-radius:2px;border:1.5px solid var(--gc);opacity:.55}
+.gb i.o{background:var(--gc);opacity:1}
+.gb.full{box-shadow:0 0 0 1.5px var(--gc)}
+.jc{display:inline-flex;align-items:center;gap:3px;font-size:12px;color:var(--muted)}
+.jc .ico{width:14px;height:14px}
+.chip{display:flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border-radius:99px;background:var(--surface);border:1px solid var(--line);white-space:nowrap;font-size:13px;cursor:pointer;flex:none}
+.chip .pawn{width:26px;height:26px}
+.chip b{font-weight:700}
+.chip .money{font-size:13px}
+.chip.on{border-color:var(--pc);box-shadow:0 0 0 1.5px var(--pc)}
+.chip.bk{opacity:.45;filter:grayscale(1)}
+
+/* Acties */
+.actions{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;display:grid;gap:10px}
+.act-head{display:flex;align-items:center;gap:10px}
+.act-head .pawn{width:30px;height:30px}
+.act-head div{display:flex;flex-direction:column;line-height:1.2}
+.act-head span{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.act-info{margin:0;font-size:13px;color:var(--muted)}
+.act-row{display:flex;flex-wrap:wrap;gap:8px}
+.act-row .main{flex:1 1 100%}
+.act-row .sec{flex:1 1 auto}
+.act-row .more{display:none}
+.waiting{display:flex;align-items:center;gap:10px;color:var(--muted);min-height:52px}
+.waiting .pawn{width:30px;height:30px;animation:breathe 1.4s ease-in-out infinite}
+@keyframes breathe{50%{transform:scale(.88)}}
+.logbox{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-height:0}
+.loghead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.loghead h3{font-size:16px}
+.loghead .inp{width:auto;min-height:36px;font-size:13px}
+.log{list-style:none;margin:0;padding:0;max-height:260px;overflow:auto;display:grid;gap:2px;font-size:13px}
+.log li{display:flex;gap:8px;align-items:flex-start;padding:4px 0;border-bottom:1px solid var(--line)}
+.log li .pawn{width:18px;height:18px;margin-top:1px}
+.log li .dot{width:18px;height:18px;flex:none}
+.log li span{min-width:0}
+
+/* Vensters */
+.ovl{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:16px;background:var(--scrim);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:fade .18s}
+#ovl2{z-index:70}
+.mdl{background:var(--surface);color:var(--fg);border-radius:18px;box-shadow:0 30px 70px rgba(0,0,0,.32);width:min(440px,100%);max-height:calc(100% - 8px);overflow:auto;padding:22px;animation:pop .24s cubic-bezier(.2,.9,.3,1.15)}
+.mdl h2{font-size:24px;font-weight:800;line-height:1.12;margin-bottom:6px;letter-spacing:-.01em}
+.mdl h3{font-size:16px;font-weight:700}
+.mdl p{margin:6px 0}
+.ovl.wide .mdl{width:min(720px,100%)}
+.ovl.sheet{place-items:stretch end;padding:0;background:rgba(0,0,0,.14);-webkit-backdrop-filter:none;backdrop-filter:none}
+.ovl.sheet .mdl{width:min(430px,100%);height:100%;max-height:none;border-radius:20px 0 0 20px;animation:slideL .26s ease-out}
+.ovl.cardm .mdl,.ovl.handoff .mdl{background:transparent;box-shadow:none;width:min(360px,100%)}
+.ovl.handoff{background:radial-gradient(circle at 50% 38%,var(--hc,#2E86AB),var(--felt) 75%);-webkit-backdrop-filter:none;backdrop-filter:none}
+.ho{display:grid;justify-items:center;text-align:center;gap:10px;color:#fff}
+.ho .pawn{width:120px;height:120px;filter:drop-shadow(0 12px 20px rgba(0,0,0,.35));animation:floaty 4s ease-in-out infinite;--r:0deg}
+.ho .eyebrow{color:rgba(255,255,255,.75);justify-content:center}
+.ho h2{color:#fff;font-size:30px}
+@keyframes fade{from{opacity:0}}
+@keyframes pop{from{transform:scale(.94) translateY(8px);opacity:0}}
+@keyframes slideL{from{transform:translateX(40px);opacity:0}}
+@keyframes slideU{from{transform:translateY(60px);opacity:.4}}
+
+.kv{display:grid;grid-template-columns:1fr auto;gap:6px 12px;font-size:14px;padding:12px 14px;border-radius:12px;background:var(--tile2)}
+.kv b{font-family:var(--mono);text-align:right}
+.hint{display:flex;gap:8px;align-items:flex-start;font-size:14px;background:var(--accent-soft);border-radius:12px;padding:10px 12px;margin-top:10px}
+.hint .ico{color:var(--accent);width:18px;height:18px;margin-top:1px}
+
+.deed{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--tile);margin:12px auto;max-width:300px;box-shadow:var(--shadow-s)}
+.deed-h{padding:14px 12px;text-align:center;background:var(--dc);color:var(--dt)}
+.deed-h small{display:block;font-size:10px;letter-spacing:.16em;text-transform:uppercase;opacity:.85}
+.deed-h b{display:block;font-family:var(--display);font-size:22px;font-weight:800;line-height:1.1;margin-top:3px}
+.deed-h span{font-size:12px;opacity:.9}
+.deed-h .ico{width:30px;height:30px;margin:0 auto 4px;display:block}
+.deed table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.deed td{padding:5px 14px}
+.deed td:last-child{text-align:right;font-family:var(--mono)}
+.deed tr.cur td{background:var(--accent-soft);font-weight:700}
+.hs{display:inline-flex;gap:1px;vertical-align:-2px;margin-left:4px}
+.hs svg{height:12px;width:auto}
+.deed-f{border-top:1px solid var(--line);padding:8px 14px;font-size:12px;color:var(--muted);display:grid;gap:2px}
+.deed-o{border-top:1px solid var(--line);padding:8px 14px;font-size:13px;display:flex;align-items:center;gap:8px}
+.deed-o .pawn{width:22px;height:22px}
+.deed.m .deed-h{background:var(--muted);color:var(--surface)}
+.neg{color:var(--neg)} .pos{color:var(--pos)}
+
+.pcard{border-radius:18px;overflow:hidden;background:var(--surface);box-shadow:0 30px 60px rgba(0,0,0,.35);animation:flip .6s cubic-bezier(.2,.8,.3,1.1);transform-origin:50% 50%}
+@keyframes flip{0%{transform:perspective(900px) translateY(-60px) rotateY(180deg) scale(.7);opacity:0}40%{opacity:1}100%{transform:perspective(900px) rotateY(0) scale(1)}}
+.pc-h{display:flex;align-items:center;gap:10px;padding:16px 18px;background:var(--chance);color:#fff;font-family:var(--display);font-weight:800;font-size:22px}
+.pcard.chest .pc-h{background:var(--chest)}
+.pc-h .ico{width:30px;height:30px}
+.pc-b{padding:26px 22px 22px;text-align:center;min-height:150px;display:grid;align-content:center;gap:8px}
+.pc-t{font-family:var(--display);font-size:22px;font-weight:700;line-height:1.2;margin:0!important}
+.pc-s{color:var(--muted);margin:0!important}
+.pcard .btns{padding:0 18px 18px;margin:0}
+
+.bidder{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:var(--tile2)}
+.bidder .pawn{width:48px;height:48px}
+.bidder b{font-family:var(--display);font-size:20px;display:block}
+.high{font-size:15px;margin:14px 0 4px}
+.high b{font-family:var(--mono);font-size:22px}
+.bidgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.bidgrid .btn{padding:8px}
+.mini{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px}
+.mini i{width:12px;height:36px;border-radius:4px;flex:none}
+.mini div{display:grid;line-height:1.25}
+.mini span{font-size:13px;color:var(--muted)}
+
+.mgroup{border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-top:12px}
+.mgh{display:flex;align-items:center;gap:8px;font-weight:700;margin-bottom:4px}
+.mgh i{width:14px;height:14px;border-radius:4px}
+.mgh small{margin-left:auto;font-weight:500;color:var(--muted);font-size:12px}
+.mrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.mrow:first-of-type{border-top:0}
+.mname{display:grid;min-width:0;line-height:1.25}
+.mname span{font-size:12px;color:var(--muted)}
+.mbtns{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.hcount{display:inline-flex;gap:1px;min-width:38px;justify-content:center}
+.hcount svg{height:14px;width:auto}
+.mfoot{position:sticky;bottom:-22px;background:var(--surface);margin:16px -22px -22px;padding:14px 22px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.mfoot .stock{font-size:13px;color:var(--muted);flex:1 1 100%}
+.mfoot .btn{flex:1 1 auto}
+.shortbox{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:14px;border-radius:14px;background:var(--tile2);font-size:14px;margin-top:8px}
+.shortbox b{font-family:var(--mono);text-align:right}
+.shortbox .big{font-size:20px}
+.confirm{margin-top:14px;padding:14px;border:2px solid var(--neg);border-radius:14px}
+
+.tcols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+.tside{border:1px solid var(--line);border-radius:14px;padding:12px;display:grid;gap:8px;align-content:start;min-width:0}
+.tside h3{display:flex;align-items:center;gap:8px;font-size:15px}
+.tside h3 .pawn{width:24px;height:24px}
+.tlist{display:grid;gap:4px;max-height:220px;overflow:auto}
+.tprop{display:flex;align-items:center;gap:8px;font-size:14px;padding:6px 4px;border-radius:8px;cursor:pointer;min-height:36px}
+.tprop:hover{background:var(--tile2)}
+.tprop input{width:18px;height:18px;accent-color:var(--accent);flex:none}
+.tprop em{color:var(--neg);font-style:normal;font-size:12px}
+.sw{width:12px;height:12px;border-radius:3px;flex:none}
+.tmoney{display:grid;gap:4px;font-size:13px;font-weight:600}
+.tprob{min-height:20px;color:var(--neg);font-size:14px;margin:10px 0 0}
+.offer{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:4px;font-size:14px}
+.offer li{display:flex;align-items:center;gap:8px}
+
+.order{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:8px}
+.order li{display:grid;grid-template-columns:30px 36px minmax(0,1fr) auto 30px;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:var(--tile2);animation:pop .4s backwards;animation-delay:var(--d)}
+.order li:first-child{background:var(--accent-soft);box-shadow:inset 0 0 0 2px var(--accent)}
+.order .pawn{width:34px;height:34px}
+.order .rk{font-family:var(--mono);color:var(--muted)}
+.order b{font-family:var(--mono);font-size:18px;text-align:right}
+.mdice{display:inline-flex;gap:4px}
+.mdie{width:22px;height:22px;background:#fff;border-radius:5px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:3px;gap:1px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.mdie i{border-radius:50%}
+.mdie i.on{background:#1B2422}
+
+.rank{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:8px}
+.rank li{display:grid;grid-template-columns:28px 34px minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px 12px;border-radius:12px;background:var(--tile2)}
+.rank li:first-child{background:var(--accent-soft);box-shadow:inset 0 0 0 2px var(--accent)}
+.rank .pawn{width:32px;height:32px}
+.rank b{font-family:var(--mono)}
+.winner{display:grid;justify-items:center;text-align:center;gap:6px}
+.winner .pawn{width:86px;height:86px;animation:floaty 4s ease-in-out infinite;--r:0deg}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.stat{border:1px solid var(--line);border-radius:12px;padding:10px;display:grid;gap:2px;font-size:12px;color:var(--muted);min-width:0}
+.stat b{color:var(--fg);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stat span.num{color:var(--fg)}
+
+.rules details{border-bottom:1px solid var(--line);padding:4px 0}
+.rules summary{cursor:pointer;font-weight:700;padding:10px 0;list-style-position:inside}
+.rules details p,.rules details ul{margin:0 0 12px;color:var(--fg);font-size:14px}
+.rules ul{padding-left:20px;display:grid;gap:4px}
+.kbd{font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:1px 6px;background:var(--tile2)}
+.dbg{display:grid;gap:10px;margin-top:12px}
+.dbg .r{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.dbg .inp{width:auto;flex:1 1 120px}
+.dbg input.inp[type=number]{flex:0 0 74px}
+.menu{display:grid;gap:8px;margin-top:10px}
+
+#toasts{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:90;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;width:min(460px,calc(100% - 32px))}
+.toast{background:var(--toast);color:var(--toast-fg);padding:8px 16px 8px 8px;border-radius:99px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500;box-shadow:var(--shadow);animation:tin .28s cubic-bezier(.2,.9,.3,1.2);max-width:100%}
+.toast.plain{padding-left:16px}
+.toast .pawn{width:26px;height:26px}
+.toast.hint{background:var(--accent);color:var(--accent-fg)}
+.toast.out{transition:opacity .3s,transform .3s;opacity:0;transform:translateY(-8px)}
+@keyframes tin{from{opacity:0;transform:translateY(-12px) scale(.96)}}
+#confetti{position:fixed;inset:0;z-index:95;pointer-events:none;width:100%;height:100%}
+
+@media (max-width:1024px){
+  #game{grid-template-columns:minmax(0,1fr);grid-template-areas:"top" "chips" "board" "side";padding-block:0 calc(150px + env(safe-area-inset-bottom,0px))}
+  .chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 4px;scrollbar-width:none}
+  #players{display:none}
+  .actions{position:fixed;left:0;right:0;bottom:0;z-index:30;border-radius:18px 18px 0 0;border-width:1px 0 0;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));box-shadow:0 -10px 30px rgba(0,0,0,.12);gap:8px}
+  .act-head{display:none}
+  .act-row .main{flex:1 1 100%}
+  .act-row .sec.x{display:none}
+  .act-row .more{display:inline-flex}
+  .act-row .sec{flex:1 1 0;min-width:0;padding-inline:10px}
+  .act-row .sec span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .log{max-height:none}
+  .side{max-width:720px;width:100%;margin:0 auto}
+}
+@media (max-width:640px){
+  .modes{grid-template-columns:1fr}
+  .hero{padding:32px 22px 180px;min-height:0}
+  .fdecks{top:auto;bottom:10px;right:50%;transform:translateX(50%) scale(.8);transform-origin:bottom center;height:200px}
+  .prow{grid-template-columns:48px minmax(0,1fr) 44px}
+  .prow .seg{grid-column:1/3}
+  .prow .lvl{grid-column:1/-1}
+  .prow .rm{grid-row:1;grid-column:3}
+  .ovl{place-items:end stretch;padding:0}
+  .mdl{width:100%;border-radius:20px 20px 0 0;max-height:90%;animation:slideU .26s ease-out;padding-bottom:calc(22px + env(safe-area-inset-bottom,0px))}
+  .ovl.sheet{place-items:end stretch}
+  .ovl.sheet .mdl{height:auto;max-height:84%;border-radius:20px 20px 0 0;width:100%;animation:slideU .26s ease-out}
+  .ovl.cardm,.ovl.handoff{place-items:center;padding:16px}
+  .ovl.cardm .mdl,.ovl.handoff .mdl{border-radius:18px;animation:none}
+  .tcols{grid-template-columns:1fr}
+  .tbtns .lbl{display:none}
+  .brand{font-size:19px}
+  .stats{grid-template-columns:1fr}
+  .bidgrid{grid-template-columns:repeat(2,1fr)}
+}
+@media (min-width:641px){ .tbtns .lbl{display:inline} }
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+
+<div id="setup"></div>
+<section id="game" hidden aria-label="Spelbord">
+  <header class="top">
+    <div class="brand"><i aria-hidden="true"></i><span id="brandName"></span></div>
+    <div class="tinfo" id="tinfo" aria-live="off"></div>
+    <div class="tbtns">
+      <button class="iconbtn" id="bFast" aria-pressed="false" title="Computerbeurten versnellen"></button>
+      <button class="iconbtn" id="bPause" aria-pressed="false" title="Spel pauzeren"></button>
+      <button class="iconbtn" id="bSound" aria-pressed="false" title="Geluid aan of uit"></button>
+      <button class="iconbtn" id="bTheme" title="Licht of donker thema"></button>
+      <button class="iconbtn" id="bRules" title="Spelregels"></button>
+      <button class="iconbtn" id="bMenu" title="Menu"></button>
+    </div>
+  </header>
+  <div class="chips" id="chips" aria-label="Spelers"></div>
+  <div class="boardArea" id="boardArea">
+    <div class="board" id="board">
+      <div class="grid" id="grid"></div>
+      <div class="tokens" id="tokens"></div>
+      <div class="floats" id="floats"></div>
+    </div>
+  </div>
+  <aside class="side">
+    <div class="plist2" id="players" aria-label="Spelers"></div>
+    <div class="actions" id="actions" aria-live="polite"></div>
+    <section class="logbox" aria-label="Logboek">
+      <div class="loghead"><h3>Logboek</h3><select class="inp" id="logFilter" aria-label="Filter logboek per speler"></select></div>
+      <ol class="log" id="log"></ol>
+    </section>
+  </aside>
+</section>
+<div class="ovl" id="ovl" hidden><div class="mdl" role="dialog" aria-modal="true"></div></div>
+<div class="ovl" id="ovl2" hidden><div class="mdl" role="dialog" aria-modal="true"></div></div>
+<div id="toasts" aria-live="polite"></div>
+<canvas id="confetti" hidden></canvas>
+
+<script>
+(() => {
+'use strict';
+const SPELNAAM = "Stratenspel";
+const SAVE_KEY = 'stratenspel-save-v1', PREF_KEY = 'stratenspel-prefs-v1';
+
+/* ================= Hulpfuncties ================= */
+const store = {
+  get(k){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):null; }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); return true; }catch(e){ return false; } },
+  del(k){ try{ localStorage.removeItem(k); }catch(e){} }
+};
+const $ = (s,r=document)=>r.querySelector(s);
+const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
+const fmt = n => (n<0?'−':'')+'€'+Math.abs(Math.round(n)).toLocaleString('nl-NL');
+const d6 = () => 1+Math.floor(Math.random()*6);
+const shuffle = a => { for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const SH = '­';
+const RM = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : {matches:false};
+
+/* ================= Data ================= */
+const GROUPS = {
+  bruin:{naam:'Bruin',adj:'bruine',stad:'Ons Dorp',leden:[1,3],huis:50},
+  lichtblauw:{naam:'Lichtblauw',adj:'lichtblauwe',stad:'Arnhem',leden:[6,8,9],huis:50},
+  roze:{naam:'Roze',adj:'roze',stad:'Haarlem',leden:[11,13,14],huis:100},
+  oranje:{naam:'Oranje',adj:'oranje',stad:'Utrecht',leden:[16,18,19],huis:100},
+  rood:{naam:'Rood',adj:'rode',stad:'Groningen',leden:[21,23,24],huis:150},
+  geel:{naam:'Geel',adj:'gele',stad:'Den Haag',leden:[26,27,29],huis:150},
+  groen:{naam:'Groen',adj:'groene',stad:'Rotterdam',leden:[31,32,34],huis:200},
+  donkerblauw:{naam:'Donkerblauw',adj:'donkerblauwe',stad:'Amsterdam',leden:[37,39],huis:200}
+};
+const LIGHT_GROUPS = new Set(['lichtblauw','oranje','geel','groen']);
+const gcol = g => `var(--g-${g})`;
+const st = (name,dn,group,price,rent) => ({type:'street',name,dn,city:GROUPS[group].stad,group,price,rent});
+const SPACES = [
+  {type:'go',name:'Start'},
+  st('Dorpsstraat',`Dorps${SH}straat`,'bruin',60,[2,10,30,90,160,250]),
+  {type:'chest',name:'Algemeen Fonds'},
+  st('Brink','Brink','bruin',60,[4,20,60,180,320,450]),
+  {type:'tax',name:'Inkomstenbelasting',dn:`Inkomsten${SH}belasting`,amount:200},
+  {type:'station',name:'Station Zuid',dn:'Station Zuid',price:200},
+  st('Steenstraat',`Steen${SH}straat`,'lichtblauw',100,[6,30,90,270,400,550]),
+  {type:'chance',name:'Kans'},
+  st('Ketelstraat',`Ketel${SH}straat`,'lichtblauw',100,[6,30,90,270,400,550]),
+  st('Velperplein',`Velper${SH}plein`,'lichtblauw',120,[8,40,100,300,450,600]),
+  {type:'jail',name:'Gevangenis'},
+  st('Barteljorisstraat',`Bartel${SH}joris${SH}straat`,'roze',140,[10,50,150,450,625,750]),
+  {type:'utility',name:'Elektriciteitsbedrijf',dn:`Elektrici${SH}teits${SH}bedrijf`,price:150,kind:'elec'},
+  st('Zijlweg','Zijlweg','roze',140,[10,50,150,450,625,750]),
+  st('Houtstraat',`Hout${SH}straat`,'roze',160,[12,60,180,500,700,900]),
+  {type:'station',name:'Station West',dn:'Station West',price:200},
+  st('Neude','Neude','oranje',180,[14,70,200,550,750,950]),
+  {type:'chest',name:'Algemeen Fonds'},
+  st('Biltstraat',`Bilt${SH}straat`,'oranje',180,[14,70,200,550,750,950]),
+  st('Vreeburg',`Vree${SH}burg`,'oranje',200,[16,80,220,600,800,1000]),
+  {type:'parking',name:'Vrij Parkeren'},
+  st('A-Kerkhof',`A-Kerk${SH}hof`,'rood',220,[18,90,250,700,875,1050]),
+  {type:'chance',name:'Kans'},
+  st('Groote Markt','Groote Markt','rood',220,[18,90,250,700,875,1050]),
+  st('Heerestraat',`Heere${SH}straat`,'rood',240,[20,100,300,750,925,1100]),
+  {type:'station',name:'Station Noord',dn:'Station Noord',price:200},
+  st('Spui','Spui','geel',260,[22,110,330,800,975,1150]),
+  st('Plein','Plein','geel',260,[22,110,330,800,975,1150]),
+  {type:'utility',name:'Waterleiding',dn:`Water${SH}leiding`,price:150,kind:'water'},
+  st('Lange Poten','Lange Poten','geel',280,[24,120,360,850,1025,1200]),
+  {type:'gotojail',name:'Ga naar de gevangenis'},
+  st('Hofplein',`Hof${SH}plein`,'groen',300,[26,130,390,900,1100,1275]),
+  st('Blaak','Blaak','groen',300,[26,130,390,900,1100,1275]),
+  {type:'chest',name:'Algemeen Fonds'},
+  st('Coolsingel',`Cool${SH}singel`,'groen',320,[28,150,450,1000,1200,1400]),
+  {type:'station',name:'Station Oost',dn:'Station Oost',price:200},
+  {type:'chance',name:'Kans'},
+  st('Leidsestraat',`Leidse${SH}straat`,'donkerblauw',350,[35,175,500,1100,1300,1500]),
+  {type:'tax',name:'Extra Belasting',dn:'Extra Belasting',amount:100},
+  st('Kalverstraat',`Kalver${SH}straat`,'donkerblauw',400,[50,200,600,1400,1700,2000])
+];
+const OWNABLE = SPACES.map((s,i)=>['street','station','utility'].includes(s.type)?i:-1).filter(i=>i>=0);
+const STATIONS = [5,15,25,35], UTILS = [12,28];
+const isOwnable = i => OWNABLE.includes(i);
+
+const CHANCE = [
+  {t:'Ga verder naar Start.',s:'Ontvang €200.',a:{go:0}},
+  {t:'Ga verder naar Heerestraat.',s:'Passeer je Start, ontvang dan €200.',a:{go:24}},
+  {t:'Ga verder naar Barteljorisstraat.',s:'Passeer je Start, ontvang dan €200.',a:{go:11}},
+  {t:'Ga verder naar het dichtstbijzijnde nutsbedrijf.',s:'Is het in bezit, gooi dan opnieuw en betaal de eigenaar 10× de ogen.',a:{near:'utility'}},
+  {t:'Ga verder naar het dichtstbijzijnde station.',s:'Betaal de eigenaar dubbele huur.',a:{near:'station'}},
+  {t:'Ga verder naar het dichtstbijzijnde station.',s:'Betaal de eigenaar dubbele huur.',a:{near:'station'}},
+  {t:'Ga verder naar Kalverstraat.',s:'',a:{go:39}},
+  {t:'Reis naar Station Zuid.',s:'Passeer je Start, ontvang dan €200.',a:{go:5}},
+  {t:'De bank betaalt u €50 dividend.',s:'',a:{money:50}},
+  {t:'Verlaat de gevangenis zonder betalen.',s:'Bewaar deze kaart tot je hem nodig hebt of verkoopt.',a:{jailcard:true}},
+  {t:'Ga 3 plaatsen terug.',s:'',a:{back:3}},
+  {t:'Ga direct naar de gevangenis.',s:'Ga niet langs Start en ontvang geen €200.',a:{jail:true}},
+  {t:'Algemene reparaties aan al uw huizen.',s:'Betaal €25 per huis en €100 per hotel.',a:{repairs:[25,100]}},
+  {t:'Boete voor te snel rijden.',s:'Betaal €15.',a:{money:-15}},
+  {t:'U bent tot voorzitter gekozen.',s:'Betaal iedere speler €50.',a:{payEach:50}},
+  {t:'Uw bouwverzekering vervalt.',s:'Ontvang €150.',a:{money:150}},
+  {t:'U wint een kruiswoordpuzzelwedstrijd.',s:'Ontvang €100.',a:{money:100}}
+];
+const CHEST = [
+  {t:'Ga verder naar Start.',s:'Ontvang €200.',a:{go:0}},
+  {t:'Vergissing van de bank in uw voordeel.',s:'Ontvang €200.',a:{money:200}},
+  {t:'Doktersrekening.',s:'Betaal €50.',a:{money:-50}},
+  {t:'Verkoop van aandelen.',s:'Ontvang €50.',a:{money:50}},
+  {t:'Verlaat de gevangenis zonder betalen.',s:'Bewaar deze kaart tot je hem nodig hebt of verkoopt.',a:{jailcard:true}},
+  {t:'Ga direct naar de gevangenis.',s:'Ga niet langs Start en ontvang geen €200.',a:{jail:true}},
+  {t:'Lijfrente vervalt.',s:'Ontvang €100.',a:{money:100}},
+  {t:'Restitutie inkomstenbelasting.',s:'Ontvang €20.',a:{money:20}},
+  {t:'Het is uw verjaardag.',s:'Ontvang €10 van iedere speler.',a:{collectEach:10}},
+  {t:'Levensverzekering keert uit.',s:'Ontvang €100.',a:{money:100}},
+  {t:'Ziekenhuisrekening.',s:'Betaal €100.',a:{money:-100}},
+  {t:'Schoolgeld.',s:'Betaal €50.',a:{money:-50}},
+  {t:'Adviseurshonorarium.',s:'Ontvang €25.',a:{money:25}},
+  {t:'Straatreparaties.',s:'Betaal €40 per huis en €115 per hotel.',a:{repairs:[40,115]}},
+  {t:'U heeft de tweede prijs in een schoonheidswedstrijd gewonnen.',s:'Ontvang €10.',a:{money:10}},
+  {t:'U erft €100.',s:'',a:{money:100}}
+];
+const DECKS = {chance:CHANCE, chest:CHEST};
+const DECKNAME = {chance:'Kans', chest:'Algemeen Fonds'};
+const JAILCARD_ID = {chance:CHANCE.findIndex(c=>c.a.jailcard), chest:CHEST.findIndex(c=>c.a.jailcard)};
+
+const TOKENS = ['auto','hoed','hond','schip','schoen','fiets'];
+const PAWNS = {
+  auto:{naam:'Auto',svg:'<path d="M3.5 15.5v-3.3l2.3-4.4h9.6l3.3 4.4h1.8v3.3z"/><circle cx="7.6" cy="16.4" r="2.3"/><circle cx="16.6" cy="16.4" r="2.3"/>'},
+  hoed:{naam:'Hoed',svg:'<rect x="7" y="4" width="10" height="10.5" rx="1.6"/><rect x="3.2" y="14.5" width="17.6" height="3.4" rx="1.7"/>'},
+  hond:{naam:'Hond',svg:'<path d="M4.6 8.4 7.4 4.6l2.9 3h4.6l2.4-2.3 2.6 3.7-2.2 2.3V18h-2.6v-4.2H9V18H6.4v-6.3z"/>'},
+  schip:{naam:'Schip',svg:'<path d="M3 13.5h18l-3.2 5H6.2z"/><path d="M11 3.5v9H5.4z"/><path d="M12.4 5.4v7.1h5.8z"/>'},
+  schoen:{naam:'Schoen',svg:'<path d="M3.4 7.6h5.2l2.3 3.6 7.6 2.1a3.1 3.1 0 0 1 2.3 3V18H3.4z"/>'},
+  fiets:{naam:'Fiets',svg:'<g fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="15.5" r="3.6"/><circle cx="18" cy="15.5" r="3.6"/><path d="M6 15.5 9.6 9h6L18 15.5M9.6 9l3.5 6.5H6M15 6.4h2.2"/></g>'}
+};
+const PCOLORS = ['#E4572E','#2E86AB','#F3A712','#7B4FB8','#29A36A','#D94F8C'];
+const AI_NAMES = ['Bram','Fleur','Daan','Noor','Sem'];
+const LEVELS = {makkelijk:'Makkelijk',normaal:'Normaal',moeilijk:'Moeilijk'};
+
+const ICONS = {
+  train:'<rect x="6" y="3" width="12" height="13" rx="3"/><path d="M6 9.5h12"/><circle cx="9.5" cy="12.8" r="1" fill="currentColor" stroke="none"/><circle cx="14.5" cy="12.8" r="1" fill="currentColor" stroke="none"/><path d="M8.5 16 6 20.5M15.5 16l2.5 4.5M7.3 18.5h9.4"/>',
+  bulb:'<path d="M9 17.5h6M10 20.5h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1 2.1v.6h5v-.6c0-.8.4-1.6 1.1-2.1A6 6 0 0 0 12 3z"/>',
+  tap:'<path d="M3.5 9.5H12a4 4 0 0 1 4 4v1"/><path d="M3.5 6.5v6M8 9.5v-3M5.5 6.5h5"/><path d="M16 17.2c.9 1.1 1.3 1.9 1.3 2.5a1.3 1.3 0 0 1-2.6 0c0-.6.4-1.4 1.3-2.5z" fill="currentColor"/>',
+  question:'<path d="M8.8 8.6a3.3 3.3 0 1 1 4.7 3c-.9.5-1.5 1.2-1.5 2.2v.7"/><circle cx="12" cy="18" r="1.1" fill="currentColor" stroke="none"/>',
+  chest:'<path d="M3.5 10a4.5 4.5 0 0 1 4.5-4.5h8a4.5 4.5 0 0 1 4.5 4.5v9h-17z"/><path d="M3.5 12.5h17"/><rect x="10.3" y="11" width="3.4" height="4" rx=".8"/>',
+  coin:'<circle cx="12" cy="12" r="8"/><path d="M8.5 12h7"/>',
+  arrow:'<path d="M20 12H5M10 6.5 4.5 12l5.5 5.5"/>',
+  bars:'<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 4v16M12 4v16M16 4v16"/>',
+  car:'<path d="M4 15.5v-3l1.8-4.2A2 2 0 0 1 7.6 7h8.8a2 2 0 0 1 1.8 1.3L20 12.5v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M4.5 12.5h15"/><circle cx="7.5" cy="16.5" r="1.8"/><circle cx="16.5" cy="16.5" r="1.8"/>',
+  whistle:'<path d="M3.5 13a5 5 0 1 0 9.6 1.8l7.4-1.3V9h-11a5 5 0 0 0-6 4z"/><circle cx="8.6" cy="14" r="1.5"/><path d="M10 9V6.5"/>',
+  people:'<circle cx="8.5" cy="8" r="3"/><circle cx="16.5" cy="9" r="2.5"/><path d="M3 19a5.5 5.5 0 0 1 11 0M14 19a4.5 4.5 0 0 1 7.5-3.3"/>',
+  cpu:'<rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><path d="M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3"/>',
+  help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.6 2.2c-.7.4-1.1.9-1.1 1.6v.4"/><circle cx="12" cy="16.8" r=".9" fill="currentColor" stroke="none"/>',
+  sound:'<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>',
+  mute:'<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/>',
+  theme:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+  menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',
+  pause:'<path d="M9 5v14M15 5v14"/>',
+  play:'<path d="M7 5l12 7-12 7z"/>',
+  fast:'<path d="M4 6l8 6-8 6zM12 6l8 6-8 6z"/>',
+  build:'<path d="M4 11 12 4l8 7v9H4z"/><path d="M10 20v-5h4v5"/>',
+  trade:'<path d="M4 8h14l-3.5-3.5M20 16H6l3.5 3.5"/>',
+  undo:'<path d="M9 6 4 11l5 5"/><path d="M4 11h10a5 5 0 0 1 0 10h-3"/>',
+  key:'<circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v3M21 12v2"/>',
+  dice:'<rect x="4" y="4" width="16" height="16" rx="3.5"/><circle cx="9" cy="9" r="1.2" fill="currentColor"/><circle cx="15" cy="15" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/>',
+  flag:'<path d="M5 21V4h11l-2 4 2 4H5"/>',
+  more:'<circle cx="5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="19" cy="12" r="1.5" fill="currentColor"/>',
+  bulbhint:'<path d="M9 17.5h6M10 20.5h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1 2.1v.6h5v-.6c0-.8.4-1.6 1.1-2.1A6 6 0 0 0 12 3z"/>'
+};
+const icon = (n,cls='') => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]}</svg>`;
+const pawnSVG = (token,color,cls='') => `<svg class="pawn ${cls}" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14.4" fill="${color}" stroke="#fff" stroke-width="2.2"/><g transform="translate(4 4)" fill="#fff">${PAWNS[token].svg}</g></svg>`;
+const pawn = p => pawnSVG(p.token,p.color);
+const HOUSE_SVG = '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 5.2 5 1.4l4 3.8V9.4H1z" fill="var(--house)" stroke="#fff" stroke-width=".7" stroke-linejoin="round"/></svg>';
+const HOTEL_SVG = '<svg viewBox="0 0 18 10" aria-hidden="true"><path d="M1.2 3.6h15.6v5.8H1.2z" fill="var(--hotel)" stroke="#fff" stroke-width=".7"/><path d="M4 3.6V.8h2.6" fill="none" stroke="var(--hotel)" stroke-width=".9"/><path d="M6.6.8 8.6 1.5 6.6 2.2z" fill="var(--hotel)"/></svg>';
+const PIPS = {1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+const dieHTML = n => Array.from({length:9},(_,i)=>`<i class="${PIPS[n].includes(i)?'on':''}"></i>`).join('');
+
+/* ================= Status ================= */
+let S = null;
+const UI = { wait:null, paused:false, fast:false, fixedDice:null, undo:[], shown:{}, holder:null, gen:0, geo:null, logFilter:'all', lastSave:null, managing:false, ranking:null };
+const prefs = Object.assign({theme:'system'}, store.get(PREF_KEY)||{});
+
+function gsleep(ms){ const g=UI.gen; return new Promise(r=>setTimeout(()=>{ if(g===UI.gen) r(); }, ms)); }
+const curP = () => S.players[S.cur];
+const active = () => S.players.filter(p=>!p.bankrupt);
+const humans = () => active().filter(p=>!p.ai);
+const ownedBy = pid => OWNABLE.filter(i=>S.props[i].owner===pid);
+const hasMonopoly = (pid,g) => GROUPS[g].leden.every(i=>S.props[i].owner===pid);
+const groupBuilt = g => GROUPS[g].leden.some(i=>S.props[i].houses>0);
+const houseCost = i => GROUPS[SPACES[i].group].huis;
+const unmortCost = i => Math.ceil(SPACES[i].price/2*1.1);
+const interestOf = i => Math.ceil(SPACES[i].price/2*0.1);
+const swatch = i => SPACES[i].type==='street' ? gcol(SPACES[i].group) : SPACES[i].type==='station' ? 'var(--station)' : 'var(--utility)';
+
+function animMs(ms,p){
+  const a = S ? S.settings.anim : 'volledig';
+  if(a==='uit') return 0;
+  let f = a==='beperkt' ? .45 : 1;
+  if(RM.matches) f = Math.min(f,.3);
+  if(p && p.ai && UI.fast) f *= .12;
+  return Math.round(ms*f);
+}
+
+/* ================= Regels ================= */
+function rentFor(i,dice,opts={}){
+  const sp=SPACES[i], pr=S.props[i];
+  if(pr.mort||pr.owner==null) return 0;
+  if(sp.type==='street'){
+    if(pr.houses>0) return sp.rent[pr.houses];
+    return sp.rent[0]*(hasMonopoly(pr.owner,sp.group)?2:1);
+  }
+  if(sp.type==='station'){
+    const n=STATIONS.filter(s=>S.props[s].owner===pr.owner).length;
+    return 25*Math.pow(2,n-1)*(opts.double?2:1);
+  }
+  const n=UTILS.filter(s=>S.props[s].owner===pr.owner).length;
+  return (opts.utilTen?10:(n===2?10:4))*dice;
+}
+function whyNoBuild(p,i){
+  const sp=SPACES[i], pr=S.props[i];
+  if(sp.type!=='street') return 'Op stations en nutsbedrijven kun je niet bouwen';
+  if(pr.owner!==p.id) return 'Dit is niet jouw straat';
+  const g=GROUPS[sp.group];
+  if(!hasMonopoly(p.id,sp.group)) return `Je hebt nog niet de hele ${g.adj} groep`;
+  if(g.leden.some(m=>S.props[m].mort)) return 'Er rust een hypotheek op een straat in deze groep';
+  if(pr.houses>=5) return 'Er staat al een hotel';
+  const min=Math.min(...g.leden.map(m=>S.props[m].houses));
+  if(pr.houses>min) return 'Bouw gelijkmatig: bouw eerst op de andere straten van deze groep';
+  if(pr.houses===4 && S.hotels<1) return 'De bank heeft geen hotels meer';
+  if(pr.houses<4 && S.houses<1) return 'De bank heeft geen huizen meer';
+  if(p.money<g.huis) return 'Je hebt niet genoeg geld';
+  return '';
+}
+function build(p,i){
+  const pr=S.props[i], c=houseCost(i);
+  if(pr.houses===4){ pr.houses=5; S.hotels--; S.houses+=4; } else { pr.houses++; S.houses--; }
+  p.money-=c; sfx('build');
+  log(`${p.name} bouwt ${pr.houses===5?'een hotel':'een huis'} op ${SPACES[i].name}`,p.id);
+  return c;
+}
+function whyNoSell(p,i){
+  const pr=S.props[i];
+  if(SPACES[i].type!=='street'||!pr.houses) return 'Hier staan geen gebouwen';
+  const g=GROUPS[SPACES[i].group];
+  const max=Math.max(...g.leden.map(m=>S.props[m].houses));
+  if(pr.houses<max) return 'Verkoop gelijkmatig: verkoop eerst op de andere straten';
+  if(pr.houses===5 && S.houses<4) return 'De bank heeft te weinig huizen om het hotel te vervangen. Verkoop alle gebouwen in deze groep.';
+  return '';
+}
+function sellHouse(p,i){
+  const pr=S.props[i], c=houseCost(i), wasHotel=pr.houses===5;
+  if(wasHotel){ pr.houses=4; S.hotels++; S.houses-=4; } else { pr.houses--; S.houses++; }
+  p.money+=c/2;
+  log(`${p.name} verkoopt ${wasHotel?'een hotel':'een huis'} op ${SPACES[i].name} voor ${fmt(c/2)}`,p.id);
+  return {amt:c/2,hotel:wasHotel};
+}
+function sellGroup(p,g){
+  let amt=0; const before={};
+  GROUPS[g].leden.forEach(m=>{
+    const pr=S.props[m]; before[m]=pr.houses;
+    if(pr.houses===5){ S.hotels++; amt+=5*GROUPS[g].huis/2; } else { S.houses+=pr.houses; amt+=pr.houses*GROUPS[g].huis/2; }
+    pr.houses=0;
+  });
+  p.money+=amt;
+  log(`${p.name} verkoopt alle gebouwen in de ${GROUPS[g].adj} groep voor ${fmt(amt)}`,p.id);
+  return {amt,before};
+}
+function whyNoMortgage(p,i){
+  const pr=S.props[i];
+  if(pr.owner!==p.id) return 'Dit is niet jouw eigendom';
+  if(pr.mort) return 'Er rust al een hypotheek op';
+  if(SPACES[i].type==='street' && groupBuilt(SPACES[i].group)) return 'Verkoop eerst alle gebouwen in deze groep';
+  return '';
+}
+function mortgage(p,i){ const pr=S.props[i], amt=SPACES[i].price/2; pr.mort=true; p.money+=amt; log(`${p.name} neemt een hypotheek op ${SPACES[i].name} (+${fmt(amt)})`,p.id); return amt; }
+function whyNoUnmort(p,i){ return p.money<unmortCost(i) ? `Aflossen kost ${fmt(unmortCost(i))}; je hebt niet genoeg geld` : ''; }
+function unmortgage(p,i){ const c=unmortCost(i); S.props[i].mort=false; p.money-=c; log(`${p.name} lost de hypotheek op ${SPACES[i].name} af (${fmt(c)})`,p.id); return c; }
+function maxRaise(p){
+  let v=0;
+  ownedBy(p.id).forEach(i=>{ const pr=S.props[i]; if(SPACES[i].type==='street') v+=pr.houses*houseCost(i)/2; if(!pr.mort) v+=SPACES[i].price/2; });
+  return v;
+}
+function netWorth(p){
+  let v=p.money;
+  ownedBy(p.id).forEach(i=>{ const sp=SPACES[i], pr=S.props[i]; v+= pr.mort ? sp.price/2 : sp.price; if(sp.type==='street') v+=pr.houses*houseCost(i); });
+  return v;
+}
+const jailCardCount = p => (S.jailCards.chance===p.id?1:0)+(S.jailCards.chest===p.id?1:0);
+const hasJailCard = p => jailCardCount(p)>0;
+const toPot = amt => { if(S.settings.pot) S.pot+=amt; };
+function completesGroup(pid,i){ const sp=SPACES[i]; return sp.type==='street' && GROUPS[sp.group].leden.every(m=>m===i||S.props[m].owner===pid); }
+
+/* ================= Geld ================= */
+function addMoney(p,amt){ p.money+=amt; }
+async function pay(p,amount,to,reason){
+  if(amount<=0) return true;
+  if(p.money<amount){
+    const ok = p.ai ? (autoLiquidate(p,amount), p.money>=amount) : await debtScreen(p,amount,to,reason);
+    if(!ok || p.money<amount){ await bankrupt(p, to && typeof to==='object' ? to : null); return false; }
+  }
+  p.money-=amount;
+  if(to && typeof to==='object') to.money+=amount;
+  else if(to==='pot') toPot(amount);
+  sfx('pay'); render();
+  return true;
+}
+function autoLiquidate(p,target){
+  let guard=0;
+  while(p.money<target && guard++<200){
+    const own=ownedBy(p.id);
+    let c=own.filter(i=>!whyNoMortgage(p,i) && !(SPACES[i].type==='street'&&hasMonopoly(p.id,SPACES[i].group))).sort((a,b)=>SPACES[a].price-SPACES[b].price)[0];
+    if(c!=null){ mortgage(p,c); continue; }
+    c=own.filter(i=>SPACES[i].type==='street'&&!whyNoSell(p,i)).sort((a,b)=>S.props[b].houses-S.props[a].houses)[0];
+    if(c!=null){ sellHouse(p,c); continue; }
+    c=own.find(i=>S.props[i].houses>0);
+    if(c!=null){ sellGroup(p,SPACES[c].group); continue; }
+    c=own.filter(i=>!whyNoMortgage(p,i))[0];
+    if(c!=null){ mortgage(p,c); continue; }
+    break;
+  }
+}
+async function bankrupt(p,cred){
+  if(p.bankrupt) return;
+  log(`${p.name} is failliet${cred?` en draagt alles over aan ${cred.name}`:''}`,p.id);
+  toast(`${p.name} is failliet`,p); sfx('bk');
+  Object.keys(GROUPS).forEach(g=>{ if(GROUPS[g].leden.some(i=>S.props[i].owner===p.id&&S.props[i].houses>0)) sellGroup(p,g); });
+  const props=ownedBy(p.id);
+  p.bankrupt=true; p.bankruptAt=S.turn; p.inJail=false;
+  if(cred){
+    if(p.money>0) cred.money+=p.money;
+    p.money=0;
+    props.forEach(i=>{ S.props[i].owner=cred.id; if(S.props[i].mort){ const f=interestOf(i); if(cred.money>=f){ cred.money-=f; log(`${cred.name} betaalt ${fmt(f)} rente op ${SPACES[i].name}`,cred.id); } } });
+    ['chance','chest'].forEach(d=>{ if(S.jailCards[d]===p.id) S.jailCards[d]=cred.id; });
+  } else {
+    p.money=0;
+    props.forEach(i=>{ S.props[i]={owner:null,houses:0,mort:false}; });
+    ['chance','chest'].forEach(d=>{ if(S.jailCards[d]===p.id){ S.jailCards[d]=null; S.decks[d].push(JAILCARD_ID[d]); } });
+  }
+  render();
+  if(active().length<=1){ await endGame('failliet'); return; }
+  if(!cred && S.settings.auctions){ for(const i of props){ if(S.over) break; await auction(i); } }
+}
+
+/* ================= Spelverloop ================= */
+async function gameLoop(){
+  const g=UI.gen;
+  while(S && !S.over && g===UI.gen){
+    await turn();
+    if(!S || S.over || g!==UI.gen) break;
+    nextPlayer();
+  }
+}
+function nextPlayer(){
+  const n=S.players.length; let i=S.cur, guard=0;
+  do{ i=(i+1)%n; }while(S.players[i].bankrupt && guard++<10);
+  S.cur=i; S.turn++; S.phase='preroll'; S.doubles=0;
+  save();
+}
+function timeUp(){ return S.settings.timeLimit>0 && S.elapsedMs>=S.settings.timeLimit*60000; }
+
+async function turn(){
+  const p=curP();
+  if(p.bankrupt) return;
+  if(timeUp()){ await endGame('tijd'); return; }
+  UI.undo=[];
+  render();
+  if(!p.ai && ((S.phase==='preroll'&&S.doubles===0) || UI.holder==null)) await ensureHolder(p,'Volgende beurt','Ik ben '+p.name+', start mijn beurt');
+  if(S.phase==='preroll'){
+    for(;;){
+      save(); render();
+      if(p.ai){ await aiWait(); await aiJail(p); await aiBuild(p); await aiWait(); }
+      else await waitHuman('roll');
+      if(S.over||p.bankrupt) return;
+      const [a,b]=await rollDice(p); const sum=a+b, dbl=a===b;
+      log(`${p.name} gooit ${a} + ${b} = ${sum}${dbl?' (dubbel)':''}`,p.id);
+      if(p.inJail){
+        if(dbl){
+          p.inJail=false; p.jailTurns=0;
+          log(`${p.name} gooit dubbel en komt vrij`,p.id); toast(`${p.name} gooit dubbel en komt vrij`,p);
+          await moveBy(p,sum); await land(p,sum);
+        } else {
+          p.jailTurns++; p.stats.jail++;
+          if(p.jailTurns>=3){
+            log(`${p.name} zat 3 beurten vast en moet ${fmt(50)} betalen`,p.id); toast(`${p.name} betaalt ${fmt(50)} en verlaat de gevangenis`,p);
+            const ok=await pay(p,50,'pot','de boete om uit de gevangenis te komen'); if(!ok) return;
+            p.inJail=false; p.jailTurns=0;
+            await moveBy(p,sum); await land(p,sum);
+          } else { log(`${p.name} blijft in de gevangenis (poging ${p.jailTurns} van 3)`,p.id); toast(`Geen dubbel: ${p.name} blijft in de gevangenis`,p); }
+        }
+        break;
+      }
+      if(dbl){
+        S.doubles++;
+        if(S.doubles>=3){ log(`${p.name} gooit 3× dubbel en moet naar de gevangenis`,p.id); toast(`3× dubbel! ${p.name} gaat naar de gevangenis`,p); await goToJail(p); break; }
+      }
+      await moveBy(p,sum); await land(p,sum);
+      if(S.over||p.bankrupt) return;
+      if(dbl && !p.inJail){ S.phase='preroll'; toast(`Dubbel! ${p.name} gooit nog een keer`,p); continue; }
+      break;
+    }
+    if(S.over||p.bankrupt) return;
+    S.phase='postroll';
+  }
+  save(); render();
+  if(p.ai){ await aiWait(); await aiBuild(p); await aiTrades(p); await aiWait(); }
+  else await waitHuman('end');
+}
+function waitHuman(kind){ return new Promise(r=>{ UI.wait={kind,resolve:r}; render(); }); }
+function mainAction(){ const w=UI.wait; if(!w) return; UI.wait=null; render(); w.resolve(); }
+
+async function ensureHolder(p,msg,btn){
+  if(p.ai) return;
+  if(humans().length>1 && UI.holder!==p.id) await handoff(p,msg,btn);
+  UI.holder=p.id;
+}
+async function handoff(p,msg,btn){
+  const html=`<div class="ho">${pawnSVG(p.token,p.color)}<p class="eyebrow">${esc(msg||'')}</p><h2>Geef het apparaat aan ${esc(p.name)}</h2><div class="btns" style="width:100%"><button class="btn big light" data-v="ok">${esc(btn||('Ik ben '+p.name+', ga verder'))}</button></div></div>`;
+  await openModal(1,{html,cls:'handoff',style:`--hc:${p.color}`});
+  UI.holder=p.id;
+}
+
+async function rollDice(p){
+  let a=d6(), b=d6();
+  if(UI.fixedDice){ [a,b]=UI.fixedDice; UI.fixedDice=null; }
+  sfx('dice');
+  const dur=animMs(700,p), d1=$('#d1'), d2=$('#d2');
+  if(dur>0){
+    d1.classList.add('roll'); d2.classList.add('roll');
+    const end=performance.now()+dur;
+    while(performance.now()<end){ d1.innerHTML=dieHTML(d6()); d2.innerHTML=dieHTML(d6()); await gsleep(80); }
+    d1.classList.remove('roll'); d2.classList.remove('roll');
+  }
+  S.dice=[a,b]; renderDice(true);
+  if(dur>0) await gsleep(animMs(250,p));
+  return [a,b];
+}
+async function moveBy(p,n){
+  const step=animMs(150,p);
+  $('#tokens').style.setProperty('--hop',(step||1)+'ms');
+  for(let k=1;k<=n;k++){
+    p.pos=(p.pos+1)%40;
+    if(p.pos===0){
+      const amt=(k===n&&S.settings.doubleGo)?400:200;
+      p.money+=amt;
+      log(`${p.name} ${k===n?'landt op':'passeert'} Start en ontvangt ${fmt(amt)}`,p.id);
+      floatAt(0,'+'+fmt(amt)); sfx('coin'); updatePlayers();
+    }
+    if(step){ positionTokens(p.id); sfx('step'); await gsleep(step); }
+  }
+  positionTokens(); render();
+}
+async function moveBack(p,n){
+  const step=animMs(150,p);
+  for(let k=0;k<n;k++){ p.pos=(p.pos+39)%40; if(step){ positionTokens(p.id); sfx('step'); await gsleep(step); } }
+  positionTokens(); render();
+}
+async function moveTo(p,target){ await moveBy(p,(target-p.pos+40)%40); }
+async function goToJail(p){
+  p.pos=10; p.inJail=true; p.jailTurns=0; S.doubles=0;
+  sfx('jail'); positionTokens(); render();
+  log(`${p.name} gaat naar de gevangenis`,p.id);
+  await gsleep(animMs(400,p));
+}
+
+async function land(p,dice,opts={}){
+  const i=p.pos, sp=SPACES[i];
+  render();
+  if(isOwnable(i)){
+    const pr=S.props[i];
+    if(pr.owner==null){ await offerBuy(p,i); return; }
+    if(pr.owner===p.id) return;
+    const o=S.players[pr.owner];
+    if(pr.mort){ log(`Op ${sp.name} rust een hypotheek: geen huur`,p.id); toast(`${sp.name} heeft een hypotheek: geen huur`,p); return; }
+    let ds=dice;
+    if(sp.type==='utility' && opts.utilTen){ toast(`${p.name} gooit opnieuw voor het nutsbedrijf`,p); const [a,b]=await rollDice(p); ds=a+b; }
+    const rent=rentFor(i,ds,opts);
+    log(`${p.name} betaalt ${fmt(rent)} huur aan ${o.name} voor ${sp.name}`,p.id);
+    toast(`${p.name} betaalt ${fmt(rent)} huur aan ${o.name}`,p);
+    floatAt(i,'−'+fmt(rent),'neg');
+    const ok=await pay(p,rent,o,`huur voor ${sp.name}`);
+    if(ok) o.stats.rent+=rent;
+    return;
+  }
+  switch(sp.type){
+    case 'tax':
+      log(`${p.name} betaalt ${fmt(sp.amount)} ${sp.name.toLowerCase()}`,p.id); toast(`${p.name} betaalt ${fmt(sp.amount)} ${sp.name.toLowerCase()}`,p);
+      floatAt(i,'−'+fmt(sp.amount),'neg');
+      await pay(p,sp.amount,'pot',sp.name.toLowerCase()); break;
+    case 'chance': case 'chest': await drawCard(p,sp.type); break;
+    case 'gotojail': toast(`${p.name} moet naar de gevangenis`,p); await goToJail(p); break;
+    case 'parking':
+      if(S.settings.pot && S.pot>0){ const amt=S.pot; p.money+=amt; S.pot=0; log(`${p.name} krijgt de pot van Vrij Parkeren: ${fmt(amt)}`,p.id); toast(`${p.name} wint de pot: ${fmt(amt)}`,p); floatAt(20,'+'+fmt(amt)); sfx('coin'); render(); }
+      break;
+  }
+}
+
+async function offerBuy(p,i){
+  const sp=SPACES[i];
+  let buy=false;
+  if(p.money>=sp.price){
+    if(p.ai){ buy=aiWantsBuy(p,i); await aiWait(.5); }
+    else buy = (await buyModal(p,i))==='buy';
+  } else {
+    toast(`${p.name} heeft te weinig geld voor ${sp.name}`,p);
+    log(`${p.name} kan ${sp.name} niet betalen`,p.id);
+    if(!p.ai) await gsleep(600);
+  }
+  if(buy){
+    p.money-=sp.price; S.props[i].owner=p.id;
+    log(`${p.name} koopt ${sp.name} voor ${fmt(sp.price)}`,p.id);
+    toast(`${p.name} koopt ${sp.name} voor ${fmt(sp.price)}`,p);
+    glowTile(i,p.color); sfx('buy'); hintGroup(p,i); render();
+    return;
+  }
+  if(S.settings.auctions) await auction(i);
+  else log(`${sp.name} blijft bij de bank`);
+}
+function groupHint(p,i){
+  const sp=SPACES[i];
+  if(sp.type==='street'){
+    const g=GROUPS[sp.group], have=g.leden.filter(m=>m!==i&&S.props[m].owner===p.id).length+1;
+    if(have===g.leden.length) return `Hiermee heb je de hele ${g.adj} groep. Daarna kun je huizen bouwen.`;
+    const others=g.leden.filter(m=>m!==i&&S.props[m].owner!=null&&S.props[m].owner!==p.id).length;
+    return `Hiermee heb je ${have} van de ${g.leden.length} ${g.adj} straten.${others?' Een andere speler heeft er al een.':''}`;
+  }
+  if(sp.type==='station'){ const n=STATIONS.filter(s=>S.props[s].owner===p.id).length+1; return `Hiermee heb je ${n} ${n===1?'station':'stations'}: huur ${fmt(25*Math.pow(2,n-1))}.`; }
+  const n=UTILS.filter(s=>S.props[s].owner===p.id).length+1;
+  return n===2 ? 'Hiermee heb je beide nutsbedrijven: huur 10× de ogen.' : 'Huur is 4× de ogen, of 10× met beide nutsbedrijven.';
+}
+async function buyModal(p,i){
+  const sp=SPACES[i];
+  const html=`${humans().length>1?`<p class="eyebrow">${pawn(p)}${esc(p.name)}</p>`:''}<h2>${esc(sp.name)} kopen?</h2>${deedHTML(i)}
+    <div class="kv"><span>Saldo nu</span><b>${fmt(p.money)}</b><span>Na aankoop</span><b>${fmt(p.money-sp.price)}</b></div>
+    <p class="hint">${icon('bulbhint')}<span>${groupHint(p,i)}</span></p>
+    <div class="btns"><button class="btn primary big" data-v="buy">Koop voor ${fmt(sp.price)}</button><button class="btn big" data-v="no">${S.settings.auctions?'Niet kopen, veilen':'Niet kopen'}</button></div>`;
+  return openModal(1,{html});
+}
+function hintGroup(p,i){
+  const sp=SPACES[i];
+  if(p.ai||!S.settings.hints||sp.type!=='street') return;
+  if(hasMonopoly(p.id,sp.group)) toast(`${p.name}, je hebt nu de hele ${GROUPS[sp.group].adj} groep! Bouwen levert veel meer huur op.`,p,'hint',4500);
+}
+
+async function auction(i){
+  const sp=SPACES[i]; const ids=active().map(p=>p.id);
+  if(!ids.length||S.over) return;
+  let high=0, by=null; const passed=new Set();
+  log(`Veiling van ${sp.name} begint`);
+  toast(`Veiling: ${sp.name}`);
+  let k=Math.max(0,ids.indexOf(curP().id)), guard=0;
+  while(guard++<600){
+    const left=ids.filter(id=>!passed.has(id));
+    if(!left.length) break;
+    if(by!=null && left.length===1 && left[0]===by) break;
+    const id=ids[k%ids.length]; k++;
+    if(passed.has(id)||id===by) continue;
+    const p=S.players[id];
+    if(p.money<=high){ passed.add(id); continue; }
+    let bid;
+    if(p.ai){ bid=aiBid(p,i,high); if(bid!=null){ toast(`${p.name} biedt ${fmt(bid)}`,p); await aiWait(.55); } }
+    else { const v=await auctionModal(p,i,high,by); bid = (!v||v==='pass') ? null : high+parseInt(v,10); }
+    if(bid==null || bid<=high || bid>p.money) passed.add(id);
+    else { high=bid; by=id; log(`${p.name} biedt ${fmt(bid)} op ${sp.name}`,id); }
+  }
+  if(by!=null){
+    const w=S.players[by]; w.money-=high; S.props[i].owner=by;
+    log(`${w.name} wint de veiling van ${sp.name} voor ${fmt(high)}`,by);
+    toast(`${w.name} koopt ${sp.name} op de veiling voor ${fmt(high)}`,w);
+    glowTile(i,w.color); sfx('buy'); hintGroup(w,i);
+  } else { log(`Niemand biedt op ${sp.name}; het blijft bij de bank`); toast(`Geen biedingen: ${sp.name} blijft bij de bank`); }
+  render();
+}
+function auctionModal(p,i,high,by){
+  const sp=SPACES[i];
+  const incs=[1,10,50,100].map(n=>{ const why=high+n>p.money?'Zoveel geld heb je niet':''; return `<button class="btn${why?' is-disabled':''}" data-v="${n}" ${why?`data-why="${why}"`:''}>+${fmt(n)}</button>`; }).join('');
+  const html=`<p class="eyebrow">Veiling</p><div class="bidder">${pawn(p)}<div><span class="muted small">Aan de beurt om te bieden</span><b>${esc(p.name)}</b><span class="muted small">Saldo ${fmt(p.money)}</span></div></div>
+    <div class="mini" style="margin-top:12px"><i style="background:${swatch(i)}"></i><div><b>${esc(sp.name)}</b><span>Vraagprijs ${fmt(sp.price)}</span></div></div>
+    <p class="high">${by!=null?`Hoogste bod: <b>${fmt(high)}</b> van ${esc(S.players[by].name)}`:'Nog geen bod. Begin bij €1.'}</p>
+    <div class="bidgrid">${incs}</div>
+    <div class="btns"><button class="btn big" data-v="pass">Passen</button></div>`;
+  return openModal(1,{html,cls:'auction'});
+}
+
+/* ================= Kaarten ================= */
+async function drawCard(p,deck,forcedId){
+  const d=S.decks[deck]; let id;
+  if(forcedId!=null){ const k=d.indexOf(forcedId); if(k<0){ toast('Deze kaart zit nu niet in de stapel'); return; } d.splice(k,1); id=forcedId; }
+  else id=d.shift();
+  const card=DECKS[deck][id];
+  if(card.a.jailcard) S.jailCards[deck]=p.id; else d.push(id);
+  log(`${p.name} trekt ${DECKNAME[deck]}: ${card.t} ${card.s}`.trim(),p.id);
+  await showCard(p,deck,card);
+  await applyCard(p,card);
+}
+async function showCard(p,deck,card){
+  const html=`<div class="pcard ${deck}"><div class="pc-h">${icon(deck==='chance'?'question':'chest')}<span>${DECKNAME[deck]}</span></div><div class="pc-b">${humans().length>1||p.ai?`<p class="eyebrow" style="justify-content:center">${pawn(p)}${esc(p.name)}</p>`:''}<p class="pc-t">${esc(card.t)}</p>${card.s?`<p class="pc-s">${esc(card.s)}</p>`:''}</div><div class="btns"><button class="btn primary big" data-v="ok">OK</button></div></div>`;
+  if(p.ai){
+    const pr=openModal(1,{html,cls:'cardm'});
+    await aiWait(1.9);
+    if(LAYERS[1].res) closeModal(1,'ok');
+    await pr;
+  } else await openModal(1,{html,cls:'cardm'});
+}
+async function applyCard(p,c){
+  const a=c.a;
+  if(a.go!=null){ await moveTo(p,a.go); await land(p,0); return; }
+  if(a.near){
+    const list=a.near==='station'?STATIONS:UTILS;
+    let t=list.find(x=>x>p.pos); if(t==null) t=list[0];
+    await moveTo(p,t); await land(p,0,a.near==='station'?{double:true}:{utilTen:true}); return;
+  }
+  if(a.money>0){ p.money+=a.money; floatAt(p.pos,'+'+fmt(a.money)); sfx('coin'); render(); return; }
+  if(a.money<0){ floatAt(p.pos,'−'+fmt(-a.money),'neg'); await pay(p,-a.money,'pot','een kaart'); return; }
+  if(a.jailcard){ toast(`${p.name} bewaart de vrijkaart`,p); render(); return; }
+  if(a.back){ await moveBack(p,a.back); await land(p,0); return; }
+  if(a.jail){ await goToJail(p); return; }
+  if(a.repairs){
+    let h=0,ho=0; ownedBy(p.id).forEach(i=>{ const n=S.props[i].houses; if(n===5) ho++; else h+=n; });
+    const amt=h*a.repairs[0]+ho*a.repairs[1];
+    log(`${p.name} heeft ${h} huizen en ${ho} hotels: ${fmt(amt)} reparatiekosten`,p.id);
+    if(amt>0){ floatAt(p.pos,'−'+fmt(amt),'neg'); await pay(p,amt,'pot','reparaties'); } else toast('Geen gebouwen, dus niets te betalen',p);
+    return;
+  }
+  if(a.payEach){
+    const others=active().filter(o=>o!==p), tot=a.payEach*others.length;
+    const ok=await pay(p,tot,'bank','de andere spelers');
+    if(ok) others.forEach(o=>{ o.money+=a.payEach; });
+    render(); return;
+  }
+  if(a.collectEach){
+    for(const o of active().filter(o=>o!==p)){ if(p.bankrupt||S.over) break; await pay(o,a.collectEach,p,`de verjaardag van ${p.name}`); }
+    render(); return;
+  }
+}
+function payJail(p){
+  if(p.money<50||!p.inJail) return;
+  p.money-=50; toPot(50); p.inJail=false; p.jailTurns=0;
+  log(`${p.name} betaalt ${fmt(50)} en verlaat de gevangenis`,p.id); sfx('pay');
+  positionTokens(); render(); save();
+}
+function useJailCard(p){
+  const d=S.jailCards.chance===p.id?'chance':'chest';
+  S.jailCards[d]=null; S.decks[d].push(JAILCARD_ID[d]); p.inJail=false; p.jailTurns=0;
+  log(`${p.name} gebruikt een vrijkaart en verlaat de gevangenis`,p.id);
+  positionTokens(); render(); save();
+}
+
+/* ================= Schulden ================= */
+function debtHTML(p,amount,to,reason,confirm){
+  const short=Math.max(0,amount-p.money), toName=to&&typeof to==='object'?to.name:'de bank', maxR=maxRaise(p);
+  const rows=[];
+  Object.keys(GROUPS).forEach(g=>{
+    GROUPS[g].leden.filter(i=>S.props[i].owner===p.id).forEach(i=>{
+      const pr=S.props[i], ws=whyNoSell(p,i), wm=whyNoMortgage(p,i);
+      const btns=[];
+      if(pr.houses>0){
+        btns.push(`<button class="btn s${ws?' is-disabled':''}" data-act="sell" data-i="${i}" ${ws?`data-why="${esc(ws)}"`:''}>Verkoop ${pr.houses===5?'hotel':'huis'} +${fmt(houseCost(i)/2)}</button>`);
+        btns.push(`<button class="btn s" data-act="sellg" data-g="${g}">Hele groep</button>`);
+      }
+      if(!pr.mort) btns.push(`<button class="btn s${wm?' is-disabled':''}" data-act="mort" data-i="${i}" ${wm?`data-why="${esc(wm)}"`:''}>Hypotheek +${fmt(SPACES[i].price/2)}</button>`);
+      if(btns.length) rows.push(`<div class="mrow"><div class="mname"><b><span class="sw" style="display:inline-block;background:${swatch(i)};margin-right:6px"></span>${esc(SPACES[i].name)}</b><span>${pr.houses===5?'Hotel':pr.houses?pr.houses+' '+(pr.houses===1?'huis':'huizen'):'Onbebouwd'}</span></div><div class="mbtns">${btns.join('')}</div></div>`);
+    });
+  });
+  [...STATIONS,...UTILS].filter(i=>S.props[i].owner===p.id&&!S.props[i].mort).forEach(i=>{
+    rows.push(`<div class="mrow"><div class="mname"><b>${esc(SPACES[i].name)}</b></div><div class="mbtns"><button class="btn s" data-act="mort" data-i="${i}">Hypotheek +${fmt(SPACES[i].price/2)}</button></div></div>`);
+  });
+  const hopeless=p.money+maxR<amount;
+  return `<p class="eyebrow">${pawn(p)}${esc(p.name)} · schuld</p><h2>Je komt geld tekort</h2>
+    <p class="muted">Je moet ${fmt(amount)} betalen aan ${esc(toName)}${reason?` voor ${esc(reason)}`:''}. Verkoop gebouwen of neem een hypotheek tot je genoeg hebt.</p>
+    <div class="shortbox"><span>Te betalen</span><b>${fmt(amount)}</b><span>Je saldo</span><b>${fmt(p.money)}</b><span>Tekort</span><b class="big ${short?'neg':'pos'}">${short?fmt(short):'Geen'}</b></div>
+    ${hopeless?`<p class="hint" style="background:var(--jail)">${icon('coin')}<span>Ook als je alles verkoopt en verhypothekeert, kom je ${fmt(amount-p.money-maxR)} tekort.</span></p>`:''}
+    <div class="mgroup">${rows.join('')||'<p class="muted">Je hebt niets meer om te verkopen of te verhypothekeren.</p>'}</div>
+    ${confirm?`<div class="confirm"><b>Weet je het zeker?</b><p class="muted">${to&&typeof to==='object'?`Al je bezit gaat naar ${esc(toName)}.`:'Je eigendommen gaan terug naar de bank en worden geveild.'} Je doet daarna niet meer mee.</p><div class="btns"><button class="btn danger" data-v="bk">Ja, ik ga failliet</button><button class="btn" data-act="back">Terug</button></div></div>`:''}
+    <div class="mfoot"><button class="btn primary big${short?' is-disabled':''}" data-v="pay" ${short?`data-why="Je komt nog ${fmt(short)} tekort"`:''}>Betaal ${fmt(amount)}</button><button class="btn danger" data-act="bk">Failliet gaan</button></div>`;
+}
+async function debtScreen(p,amount,to,reason){
+  let confirm=false;
+  const v=await openModal(1,{html:debtHTML(p,amount,to,reason,confirm),cls:'sheet',onAct:(a,el)=>{
+    if(a==='sell') sellHouse(p,+el.dataset.i);
+    else if(a==='sellg') sellGroup(p,el.dataset.g);
+    else if(a==='mort') mortgage(p,+el.dataset.i);
+    else if(a==='bk') confirm=true;
+    else if(a==='back') confirm=false;
+    render(); refreshModal(1,debtHTML(p,amount,to,reason,confirm));
+  }});
+  return v==='pay';
+}
+
+/* ================= Beheer (bouwen & hypotheek) ================= */
+function manageHTML(p){
+  const blocks=[];
+  Object.keys(GROUPS).forEach(g=>{
+    const G=GROUPS[g], mine=G.leden.filter(i=>S.props[i].owner===p.id);
+    if(!mine.length) return;
+    const full=mine.length===G.leden.length;
+    const rows=mine.map(i=>{
+      const pr=S.props[i], wb=whyNoBuild(p,i), ws=pr.houses?whyNoSell(p,i):'Hier staan geen gebouwen', wm=pr.mort?whyNoUnmort(p,i):whyNoMortgage(p,i);
+      const hs=pr.houses===5?HOTEL_SVG:HOUSE_SVG.repeat(pr.houses);
+      return `<div class="mrow"><div class="mname"><b>${esc(SPACES[i].name)}</b><span>${pr.mort?'Hypotheek':'Huur nu '+fmt(rentFor(i,7))}</span></div>
+        <div class="mbtns"><button class="btn s${ws?' is-disabled':''}" data-act="sell" data-i="${i}" ${ws?`data-why="${esc(ws)}"`:''} aria-label="Verkoop gebouw op ${esc(SPACES[i].name)}" title="Verkoop voor ${fmt(G.huis/2)}">−</button><span class="hcount" aria-label="${pr.houses===5?'hotel':pr.houses+' huizen'}">${hs||'<span class="muted small">0</span>'}</span><button class="btn s${wb?' is-disabled':''}" data-act="build" data-i="${i}" ${wb?`data-why="${esc(wb)}"`:''} aria-label="Bouw op ${esc(SPACES[i].name)}" title="Bouw voor ${fmt(G.huis)}">+</button>
+        <button class="btn s${wm?' is-disabled':''}" data-act="${pr.mort?'unmort':'mort'}" data-i="${i}" ${wm?`data-why="${esc(wm)}"`:''}>${pr.mort?`Aflossen ${fmt(unmortCost(i))}`:`Hypotheek +${fmt(SPACES[i].price/2)}`}</button></div></div>`;
+    }).join('');
+    blocks.push(`<div class="mgroup"><div class="mgh"><i style="background:${gcol(g)}"></i>${G.naam} · ${G.stad}<small>${full?'Compleet':mine.length+' van '+G.leden.length} · huis ${fmt(G.huis)}</small></div>${rows}</div>`);
+  });
+  const other=[...STATIONS,...UTILS].filter(i=>S.props[i].owner===p.id);
+  if(other.length){
+    blocks.push(`<div class="mgroup"><div class="mgh"><i style="background:var(--station)"></i>Stations en nutsbedrijven</div>${other.map(i=>{ const pr=S.props[i], wm=pr.mort?whyNoUnmort(p,i):whyNoMortgage(p,i); return `<div class="mrow"><div class="mname"><b>${esc(SPACES[i].name)}</b><span>${pr.mort?'Hypotheek':SPACES[i].type==='station'?'Huur nu '+fmt(rentFor(i,7)):'Huur '+(UTILS.filter(u=>S.props[u].owner===p.id).length===2?10:4)+'× de ogen'}</span></div><div class="mbtns"><button class="btn s${wm?' is-disabled':''}" data-act="${pr.mort?'unmort':'mort'}" data-i="${i}" ${wm?`data-why="${esc(wm)}"`:''}>${pr.mort?`Aflossen ${fmt(unmortCost(i))}`:`Hypotheek +${fmt(SPACES[i].price/2)}`}</button></div></div>`; }).join('')}</div>`);
+  }
+  return `<p class="eyebrow">${pawn(p)}${esc(p.name)} · saldo ${fmt(p.money)}</p><h2>Bouwen & hypotheek</h2>
+    <p class="muted small">Met een complete kleurgroep zonder hypotheken kun je bouwen. Bouw gelijkmatig: het verschil per straat is hoogstens één huis. Gebouwen verkoop je voor de halve prijs.</p>
+    ${blocks.join('')||'<p class="muted">Je hebt nog geen eigendommen.</p>'}
+    <div class="mfoot"><span class="stock">Bank: ${S.houses} huizen · ${S.hotels} hotels</span>${UI.undo.length?`<button class="btn" data-act="undo">${icon('undo')}Ongedaan maken</button>`:''}<button class="btn primary" data-v="done">Klaar</button></div>`;
+}
+function markLit(){
+  const p=curP();
+  $$('.tile.lit').forEach(t=>t.classList.remove('lit'));
+  if(!UI.managing) return;
+  ownedBy(p.id).forEach(i=>{ if(SPACES[i].type==='street' && !whyNoBuild(p,i)) $('#t'+i).classList.add('lit'); });
+}
+async function openManage(){
+  const p=curP(); if(!UI.wait||p.ai||LAYERS[1].res) return;
+  UI.managing=true; $('#board').classList.add('managing'); markLit();
+  await openModal(1,{html:manageHTML(p),cls:'sheet',dismiss:true,onAct:(a,el)=>{
+    const i=+el.dataset.i;
+    if(a==='build') UI.undo.push({t:'build',i,amt:build(p,i)});
+    else if(a==='sell'){ const r=sellHouse(p,i); UI.undo.push({t:'sell',i,amt:r.amt,hotel:r.hotel}); }
+    else if(a==='mort') UI.undo.push({t:'mort',i,amt:mortgage(p,i)});
+    else if(a==='unmort') UI.undo.push({t:'unmort',i,amt:unmortgage(p,i)});
+    else if(a==='undo') undo();
+    render(); refreshModal(1,manageHTML(p)); markLit(); save();
+  }});
+  UI.managing=false; $('#board').classList.remove('managing'); markLit();
+  render(); save();
+}
+function undo(){
+  const p=curP(), u=UI.undo[UI.undo.length-1]; if(!u) return;
+  const pr=S.props[u.i];
+  if(u.t==='build'){
+    if(pr.houses===5){ if(S.houses<4) return toast('Kan niet ongedaan maken: de bank heeft te weinig huizen'); pr.houses=4; S.hotels++; S.houses-=4; }
+    else { pr.houses--; S.houses++; }
+    p.money+=u.amt;
+  } else if(u.t==='sell'){
+    if(p.money<u.amt) return toast('Je hebt niet genoeg geld om dit ongedaan te maken');
+    if(u.hotel){ if(S.hotels<1) return toast('De bank heeft geen hotels meer'); pr.houses=5; S.hotels--; S.houses+=4; }
+    else { if(S.houses<1) return toast('De bank heeft geen huizen meer'); pr.houses++; S.houses--; }
+    p.money-=u.amt;
+  } else if(u.t==='mort'){
+    if(p.money<u.amt) return toast('Je hebt niet genoeg geld om dit ongedaan te maken');
+    pr.mort=false; p.money-=u.amt;
+  } else if(u.t==='unmort'){ pr.mort=true; p.money+=u.amt; }
+  UI.undo.pop();
+  log(`${p.name} maakt de laatste actie ongedaan`,p.id);
+  render(); save();
+  if(UI.managing) refreshModal(1,manageHTML(p));
+}
+
+/* ================= Handelen ================= */
+const tradableProps = P => ownedBy(P.id).filter(i=>!(SPACES[i].type==='street'&&groupBuilt(SPACES[i].group)));
+function tradeProblem(o){
+  const A=S.players[o.from], B=S.players[o.to];
+  if(!B||A.bankrupt||B.bankrupt||A===B) return 'Kies een andere speler om mee te ruilen';
+  if(!o.giveProps.length&&!o.getProps.length&&!o.giveMoney&&!o.getMoney&&!o.giveCards.length&&!o.getCards.length) return 'Kies eerst wat je wilt ruilen';
+  if(o.giveProps.some(i=>S.props[i].owner!==A.id)||o.getProps.some(i=>S.props[i].owner!==B.id)) return 'Een van de eigendommen hoort niet (meer) bij deze speler';
+  if([...o.giveProps,...o.getProps].some(i=>SPACES[i].type==='street'&&groupBuilt(SPACES[i].group))) return 'Straten uit een groep met gebouwen kun je niet ruilen';
+  if(o.giveMoney>A.money) return `${A.name} heeft maar ${fmt(A.money)}`;
+  if(o.getMoney>B.money) return `${B.name} heeft maar ${fmt(B.money)}`;
+  if(o.giveCards.some(d=>S.jailCards[d]!==A.id)||o.getCards.some(d=>S.jailCards[d]!==B.id)) return 'Een vrijkaart hoort niet bij deze speler';
+  const intA=o.getProps.filter(i=>S.props[i].mort).reduce((s,i)=>s+interestOf(i),0);
+  const intB=o.giveProps.filter(i=>S.props[i].mort).reduce((s,i)=>s+interestOf(i),0);
+  if(A.money-o.giveMoney+o.getMoney<intA) return `${A.name} kan de hypotheekrente van ${fmt(intA)} niet betalen`;
+  if(B.money-o.getMoney+o.giveMoney<intB) return `${B.name} kan de hypotheekrente van ${fmt(intB)} niet betalen`;
+  return '';
+}
+function offerList(props,money,cards){
+  const li=[...props.map(i=>`<li><span class="sw" style="background:${swatch(i)}"></span>${esc(SPACES[i].name)}${S.props[i].mort?' <em class="neg small">(hypotheek, 10% rente)</em>':''}</li>`)];
+  if(money) li.push(`<li>${icon('coin')}<b class="num">${fmt(money)}</b></li>`);
+  cards.forEach(()=>li.push(`<li>${icon('key')}Verlaat de gevangenis-kaart</li>`));
+  return li.length?`<ul class="offer">${li.join('')}</ul>`:'<p class="muted small">Niets</p>';
+}
+function describeTrade(o){
+  const A=S.players[o.from], B=S.players[o.to];
+  const part=(props,money,cards)=>[...props.map(i=>SPACES[i].name),money?fmt(money):null,cards.length?cards.length+' vrijkaart':null].filter(Boolean).join(', ')||'niets';
+  return `${A.name} geeft ${part(o.giveProps,o.giveMoney,o.giveCards)}; ${B.name} geeft ${part(o.getProps,o.getMoney,o.getCards)}`;
+}
+function executeTrade(o){
+  const A=S.players[o.from], B=S.players[o.to];
+  o.giveProps.forEach(i=>S.props[i].owner=B.id); o.getProps.forEach(i=>S.props[i].owner=A.id);
+  A.money+=o.getMoney-o.giveMoney; B.money+=o.giveMoney-o.getMoney;
+  o.giveCards.forEach(d=>S.jailCards[d]=B.id); o.getCards.forEach(d=>S.jailCards[d]=A.id);
+  const interest=(P,list)=>list.forEach(i=>{ if(S.props[i].mort){ const f=interestOf(i); P.money-=f; log(`${P.name} betaalt ${fmt(f)} rente op ${SPACES[i].name}`,P.id); } });
+  interest(B,o.giveProps); interest(A,o.getProps);
+  log(`Ruil: ${describeTrade(o)}`,A.id);
+  toast(`Ruil gelukt tussen ${A.name} en ${B.name}`);
+  sfx('buy');
+  o.giveProps.forEach(i=>{ glowTile(i,B.color); hintGroup(B,i); }); o.getProps.forEach(i=>{ glowTile(i,A.color); hintGroup(A,i); });
+  render(); save();
+}
+function tradeEditorHTML(st,canChange){
+  const A=S.players[st.from], B=S.players[st.to];
+  const side=(P,key,props,money,cards)=>{
+    const list=tradableProps(P).map(i=>`<label class="tprop"><input type="checkbox" data-tp="${key}" value="${i}" ${props.includes(i)?'checked':''}><span class="sw" style="background:${swatch(i)}"></span><span>${esc(SPACES[i].name)}${S.props[i].mort?' <em>hypotheek</em>':''}</span></label>`).join('');
+    const cs=['chance','chest'].filter(d=>S.jailCards[d]===P.id).map(d=>`<label class="tprop"><input type="checkbox" data-tc="${key}" value="${d}" ${cards.includes(d)?'checked':''}>${icon('key')}<span>Vrijkaart (${DECKNAME[d]})</span></label>`).join('');
+    return `<div class="tside"><h3>${pawn(P)}${esc(P.name)} geeft</h3><div class="tlist">${list||'<p class="muted small">Geen ruilbare eigendommen</p>'}${cs}</div><label class="tmoney" for="t${key}M">Geld (saldo ${fmt(P.money)})<input class="inp num" type="number" inputmode="numeric" min="0" max="${P.money}" step="10" id="t${key}M" value="${money||0}"></label></div>`;
+  };
+  const others=active().filter(o=>o.id!==A.id);
+  return `<p class="eyebrow">${icon('trade')}Ruilen</p><h2>Stel een ruil voor</h2>
+    ${canChange?`<label class="tmoney" for="tTo">Ruilen met<select class="inp" id="tTo">${others.map(o=>`<option value="${o.id}" ${o.id===B.id?'selected':''}>${esc(o.name)}${o.ai?' (computer)':''}</option>`).join('')}</select></label>`:`<p class="muted">Tegenbod aan ${esc(B.name)}</p>`}
+    <div class="tcols">${side(A,'give',st.giveProps,st.giveMoney,st.giveCards)}${side(B,'get',st.getProps,st.getMoney,st.getCards)}</div>
+    <p class="tprob" id="tprob" aria-live="polite"></p>
+    <div class="btns"><button class="btn primary big" data-act="send">Voorstel doen</button><button class="btn big" data-v="">Annuleren</button></div>`;
+}
+async function tradeEditor(fromId,toId,pre,canChange){
+  const st=pre?JSON.parse(JSON.stringify(pre)):{giveProps:[],getProps:[],giveMoney:0,getMoney:0,giveCards:[],getCards:[]};
+  st.from=fromId; st.to=toId;
+  const read=box=>{
+    st.giveProps=$$('input[data-tp="give"]:checked',box).map(x=>+x.value);
+    st.getProps=$$('input[data-tp="get"]:checked',box).map(x=>+x.value);
+    st.giveCards=$$('input[data-tc="give"]:checked',box).map(x=>x.value);
+    st.getCards=$$('input[data-tc="get"]:checked',box).map(x=>x.value);
+    st.giveMoney=Math.max(0,Math.floor(+($('#tgiveM',box)||{}).value||0));
+    st.getMoney=Math.max(0,Math.floor(+($('#tgetM',box)||{}).value||0));
+  };
+  const upd=box=>{ const pr=tradeProblem(st); const el=$('#tprob',box); if(el) el.textContent=pr; };
+  const v=await openModal(1,{html:tradeEditorHTML(st,canChange),cls:'wide',dismiss:true,
+    onChange:(t)=>{ const box=t.closest('.mdl'); if(t.id==='tTo'){ st.to=+t.value; st.getProps=[]; st.getCards=[]; st.getMoney=0; read(box); st.getProps=[]; st.getCards=[]; st.getMoney=0; refreshModal(1,tradeEditorHTML(st,canChange)); return; } read(box); upd(box); },
+    onInput:(t)=>{ const box=t.closest('.mdl'); read(box); upd(box); },
+    onAct:(a,el)=>{ if(a!=='send') return; const box=el.closest('.mdl'); read(box); const pr=tradeProblem(st); if(pr){ upd(box); toast(pr); return; } closeModal(1,'send'); }
+  });
+  return v==='send'?st:null;
+}
+function tradeReviewModal(o){
+  const A=S.players[o.from], B=S.players[o.to];
+  const html=`<p class="eyebrow">${pawn(B)}${esc(B.name)}</p><h2>${esc(A.name)} stelt een ruil voor</h2>
+    <div class="tcols"><div class="tside"><h3>Jij krijgt</h3>${offerList(o.giveProps,o.giveMoney,o.giveCards)}</div><div class="tside"><h3>Jij geeft</h3>${offerList(o.getProps,o.getMoney,o.getCards)}</div></div>
+    <div class="btns"><button class="btn primary big" data-v="accept">Accepteren</button><button class="btn big" data-v="reject">Weigeren</button><button class="btn big" data-v="counter">Tegenbod doen</button></div>`;
+  return openModal(1,{html,cls:'wide'});
+}
+async function proposeTrade(o,depth=0){
+  const prob=tradeProblem(o); if(prob){ toast(prob); return false; }
+  const A=S.players[o.from], B=S.players[o.to];
+  let result=false;
+  if(B.ai){
+    await gsleep(UI.fast?80:600);
+    result=aiAcceptTrade(B,o);
+    log(`${B.name} ${result?'accepteert':'weigert'} een ruilvoorstel van ${A.name}`,B.id);
+    if(result) executeTrade(o); else toast(`${B.name} weigert het voorstel`,B);
+  } else {
+    await ensureHolder(B,`${A.name} stelt een ruil voor`,`Ik ben ${B.name}, toon het voorstel`);
+    const r=await tradeReviewModal(o);
+    if(r==='accept'){ executeTrade(o); result=true; }
+    else if(r==='counter' && depth<3){
+      const c=await tradeEditor(B.id,A.id,{giveProps:o.getProps,getProps:o.giveProps,giveMoney:o.getMoney,getMoney:o.giveMoney,giveCards:o.getCards,getCards:o.giveCards},false);
+      if(c) result=await proposeTrade(c,depth+1);
+      else { toast(`${B.name} trekt het tegenbod in`,B); }
+    } else { log(`${B.name} weigert een ruilvoorstel van ${A.name}`,B.id); toast(`${B.name} weigert het voorstel`,B); }
+  }
+  if(depth===0){ const c=curP(); if(!c.ai && !S.over) await ensureHolder(c,'Het ruilvoorstel is afgehandeld',`Ik ben ${c.name}, ga verder`); }
+  render();
+  return result;
+}
+async function openTrade(){
+  const p=curP(); if(!UI.wait||p.ai||LAYERS[1].res) return;
+  const others=active().filter(o=>o!==p); if(!others.length) return;
+  const w=UI.wait; UI.wait=null; render();
+  const offer=await tradeEditor(p.id,others[0].id,null,true);
+  if(offer) await proposeTrade(offer,0);
+  if(S && !S.over && !p.bankrupt){ UI.wait=w; render(); save(); }
+}
+
+/* ================= Computerspeler ================= */
+const W = {bruin:.85,lichtblauw:1,roze:1.08,oranje:1.25,rood:1.18,geel:1.08,groen:1.02,donkerblauw:1};
+function aiWait(f=1){
+  return (async()=>{
+    await gsleep(UI.fast?Math.round(60*f):Math.round(800*f));
+    while(UI.paused || modalOpen(2)) await gsleep(200);
+  })();
+}
+async function aiSay(p,text){ toast(text,p); await aiWait(); }
+function propValue(pid,i){
+  const sp=SPACES[i]; let v=sp.price;
+  if(sp.type==='street'){
+    v*=W[sp.group];
+    const others=GROUPS[sp.group].leden.filter(m=>m!==i);
+    const mine=others.filter(m=>S.props[m].owner===pid).length;
+    if(mine===others.length) v*=1.7; else if(mine>0) v*=1.15;
+    const opp=others.map(m=>S.props[m].owner);
+    if(opp.every(o=>o!=null&&o!==pid) && new Set(opp).size===1) v*=1.3;
+  } else if(sp.type==='station'){ v*=1+.2*STATIONS.filter(s=>s!==i&&S.props[s].owner===pid).length; }
+  else { v*=UTILS.some(s=>s!==i&&S.props[s].owner===pid)?1.1:.8; }
+  return v;
+}
+function aiWantsBuy(p,i){
+  const pr=SPACES[i].price;
+  if(p.level==='makkelijk') return Math.random()<.5;
+  if(p.level==='normaal') return p.money-pr>=150 || completesGroup(p.id,i);
+  return p.money-pr >= (propValue(p.id,i)>pr*1.3?0:100);
+}
+function aiBid(p,i,high){
+  const pr=SPACES[i].price;
+  let max = p.level==='makkelijk' ? pr*.7 : p.level==='normaal' ? pr*(completesGroup(p.id,i)?1.3:1) : propValue(p.id,i)*1.05;
+  max=Math.floor(Math.min(max, p.money-(p.level==='moeilijk'?50:100)));
+  let next = high<max*.5 ? Math.max(10,Math.round(max*.5/10)*10) : high+10;
+  if(next<=high) next=high+10;
+  return next<=max ? next : null;
+}
+function earlyGame(){ return OWNABLE.filter(i=>S.props[i].owner!=null).length < OWNABLE.length*.6; }
+async function aiJail(p){
+  if(!p.inJail) return;
+  const out = p.level==='makkelijk' ? Math.random()<.5 : earlyGame();
+  if(!out) return;
+  if(hasJailCard(p)){ useJailCard(p); await aiSay(p,`${p.name} gebruikt een vrijkaart`); }
+  else if(p.money>=(p.level==='makkelijk'?50:200)){ payJail(p); await aiSay(p,`${p.name} betaalt ${fmt(50)} en verlaat de gevangenis`); }
+}
+async function aiBuild(p){
+  const reserve={makkelijk:500,normaal:200,moeilijk:150}[p.level];
+  for(const i of ownedBy(p.id)){
+    if(S.props[i].mort && p.money-unmortCost(i)>=reserve*1.5){ unmortgage(p,i); render(); await aiSay(p,`${p.name} lost de hypotheek op ${SPACES[i].name} af`); }
+  }
+  let count=0; const max=p.level==='makkelijk'?1:15;
+  while(count<max){
+    const c=ownedBy(p.id).filter(i=>SPACES[i].type==='street'&&!whyNoBuild(p,i)&&p.money-houseCost(i)>=reserve);
+    if(!c.length) break;
+    c.sort((a,b)=>S.props[a].houses-S.props[b].houses||W[SPACES[b].group]-W[SPACES[a].group]);
+    build(p,c[0]); count++;
+  }
+  if(count){ render(); await aiSay(p,`${p.name} bouwt ${count===1?'een gebouw':count+' gebouwen'}`); }
+}
+function missingOne(pid,g){
+  const mem=GROUPS[g].leden;
+  if(groupBuilt(g)||mem.filter(m=>S.props[m].owner===pid).length!==mem.length-1) return null;
+  const m=mem.find(x=>S.props[x].owner!==pid);
+  return S.props[m].owner!=null ? m : null;
+}
+async function aiTrades(p){
+  if(p.level==='makkelijk') return;
+  for(const g of Object.keys(GROUPS)){
+    const m=missingOne(p.id,g); if(m==null) continue;
+    const other=S.players[S.props[m].owner]; if(other.bankrupt) continue;
+    if((p.tradeCd[other.id]||-99)>S.turn-8) continue;
+    p.tradeCd[other.id]=S.turn;
+    // Eerst een ruil zoeken waarbij beide spelers een groep compleet maken
+    let swap=null;
+    for(const h of Object.keys(GROUPS)){ if(h===g) continue; const n=missingOne(other.id,h); if(n!=null&&S.props[n].owner===p.id){ swap=n; break; } }
+    let offer;
+    if(swap!=null){
+      const diff=Math.round((SPACES[m].price-SPACES[swap].price)/10)*10;
+      offer={from:p.id,to:other.id,giveProps:[swap],getProps:[m],giveMoney:Math.max(0,Math.min(diff,p.money-100)),getMoney:Math.max(0,-diff),giveCards:[],getCards:[]};
+      if(offer.getMoney>other.money) offer.getMoney=0;
+    } else {
+      const money=Math.min(p.money-150,Math.round(SPACES[m].price*(p.level==='moeilijk'?2:1.6)/10)*10);
+      if(money<SPACES[m].price) continue;
+      offer={from:p.id,to:other.id,giveProps:[],getProps:[m],giveMoney:money,getMoney:0,giveCards:[],getCards:[]};
+    }
+    await aiSay(p,`${p.name} doet ${other.name} een ruilvoorstel`);
+    await proposeTrade(offer,0);
+    return;
+  }
+}
+function aiAcceptTrade(ai,o){
+  if(ai.level==='makkelijk') return false;
+  const isFrom=o.from===ai.id;
+  const recv=isFrom?o.getProps:o.giveProps, give=isFrom?o.giveProps:o.getProps;
+  const recvM=isFrom?o.getMoney:o.giveMoney, giveM=isFrom?o.giveMoney:o.getMoney;
+  const recvC=isFrom?o.getCards:o.giveCards, giveC=isFrom?o.giveCards:o.getCards;
+  const other=isFrom?o.to:o.from;
+  let gain=recvM-giveM+40*(recvC.length-giveC.length);
+  recv.forEach(i=>gain+=propValue(ai.id,i)*(S.props[i].mort?.55:1));
+  give.forEach(i=>gain-=propValue(ai.id,i)*(S.props[i].mort?.55:1));
+  const otherCompletes=give.some(i=>SPACES[i].type==='street'&&GROUPS[SPACES[i].group].leden.every(m=>give.includes(m)||S.props[m].owner===other));
+  const meCompletes=recv.some(i=>SPACES[i].type==='street'&&GROUPS[SPACES[i].group].leden.every(m=>recv.includes(m)||(S.props[m].owner===ai.id&&!give.includes(m))));
+  if(otherCompletes&&!meCompletes) return ai.level==='moeilijk' ? false : gain>250;
+  if(otherCompletes&&meCompletes) return gain>-60;
+  return gain>(ai.level==='moeilijk'?40:15);
+}
+
+/* ================= Einde ================= */
+async function endGame(why){
+  if(S.over) return;
+  S.over=true; UI.wait=null; UI.endWhy=why; store.del(SAVE_KEY); UI.lastSave=null;
+  UI.ranking=[...S.players].sort((a,b)=>(a.bankrupt-b.bankrupt)||(a.bankrupt?b.bankruptAt-a.bankruptAt:netWorth(b)-netWorth(a)));
+  log(`${UI.ranking[0].name} wint het spel!`,UI.ranking[0].id);
+  sfx('win'); render();
+  await showResults();
+}
+async function showResults(){
+  confetti();
+  const r=UI.ranking, w=r[0];
+  const best=(f)=>{ let b=null; S.players.forEach(p=>{ if(!b||f(p)>f(b)) b=p; }); return b; };
+  const mr=best(p=>p.stats.rent), mp=best(p=>ownedBy(p.id).length), mj=best(p=>p.stats.jail);
+  const html=`<div class="winner">${pawn(w)}<p class="eyebrow" style="justify-content:center">${UI.endWhy==='tijd'?'De tijd is om':'Het spel is afgelopen'}</p><h2>${esc(w.name)} wint!</h2></div>
+    <ol class="rank">${r.map((p,k)=>`<li><span class="num muted">${k+1}</span>${pawn(p)}<span>${esc(p.name)}</span><b>${p.bankrupt?'<span class="neg">Failliet</span>':fmt(netWorth(p))}</b></li>`).join('')}</ol>
+    <div class="stats"><div class="stat">Meeste huur ontvangen<b>${esc(mr.name)}</b><span class="num">${fmt(mr.stats.rent)}</span></div><div class="stat">Meeste eigendommen<b>${esc(mp.name)}</b><span class="num">${ownedBy(mp.id).length}</span></div><div class="stat">Langst in de gevangenis<b>${esc(mj.name)}</b><span class="num">${mj.stats.jail} ${mj.stats.jail===1?'beurt':'beurten'}</span></div></div>
+    <p class="muted small" style="margin-top:12px">Vermogen = geld + eigendommen (min hypotheken) + gebouwen.</p>
+    <div class="btns"><button class="btn primary big" data-v="new">Nieuw spel</button><button class="btn big" data-v="board">Bekijk het bord</button></div>`;
+  const v=await openModal(1,{html,cls:'end'});
+  if(v==='new') quitToSetup();
+}
+function confetti(){
+  if(animMs(1000)===0) return;
+  const cv=$('#confetti'), ctx=cv.getContext('2d');
+  cv.width=innerWidth; cv.height=innerHeight; cv.hidden=false;
+  const cols=PCOLORS.concat(['#F2C531','#7CC6E8']);
+  const ps=Array.from({length:170},()=>({x:Math.random()*cv.width,y:-20-Math.random()*cv.height*.6,vx:(Math.random()-.5)*3,vy:2+Math.random()*3,s:6+Math.random()*7,r:Math.random()*6,vr:(Math.random()-.5)*.3,c:cols[Math.floor(Math.random()*cols.length)]}));
+  const t0=performance.now();
+  const f=t=>{
+    ctx.clearRect(0,0,cv.width,cv.height);
+    ps.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.vy+=.03; p.r+=p.vr; ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r); ctx.fillStyle=p.c; ctx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2); ctx.restore(); });
+    if(t-t0<5000) requestAnimationFrame(f); else { ctx.clearRect(0,0,cv.width,cv.height); cv.hidden=true; }
+  };
+  requestAnimationFrame(f);
+}
+
+/* ================= Weergave ================= */
+function gridPos(i){
+  if(i===0) return [11,11]; if(i<10) return [11,11-i]; if(i===10) return [11,1];
+  if(i<20) return [11-(i-10),1]; if(i===20) return [1,1]; if(i<30) return [1,1+(i-20)];
+  if(i===30) return [1,11]; return [1+(i-30),11];
+}
+const sideClass = i => i%10===0?'corner':i<10?'s-b':i<20?'s-l':i<30?'s-t':'s-r';
+function tileHTML(sp,i){
+  if(i===0) return `<div class="cn start"><span class="cs">Ontvang ${fmt(200)} salaris</span><b>START</b>${icon('arrow')}</div>`;
+  if(i===10) return `<div class="cn jail"><div class="cell">${icon('bars')}<span>Gevangenis</span></div><span class="visit">Op bezoek</span></div>`;
+  if(i===20) return `<div class="cn park">${icon('car')}<b>Vrij Parkeren</b><span class="pot" id="potLbl"></span></div>`;
+  if(i===30) return `<div class="cn gojail">${icon('whistle')}<b>Naar de gevangenis</b></div>`;
+  let h='';
+  switch(sp.type){
+    case 'street': h=`<div class="bar" style="background:${gcol(sp.group)}"><div class="bld"></div></div><div class="nm">${sp.dn}</div><div class="city">${sp.city}</div><div class="pr">${fmt(sp.price)}</div>`; break;
+    case 'station': h=`<div class="nm top">${sp.dn}</div><div class="ic">${icon('train')}</div><div class="pr">${fmt(sp.price)}</div>`; break;
+    case 'utility': h=`<div class="nm top">${sp.dn}</div><div class="ic ut">${icon(sp.kind==='elec'?'bulb':'tap')}</div><div class="pr">${fmt(sp.price)}</div>`; break;
+    case 'chance': h=`<div class="nm top">Kans</div><div class="ic big ch">${icon('question')}</div>`; break;
+    case 'chest': h=`<div class="nm top">Algemeen Fonds</div><div class="ic big cf">${icon('chest')}</div>`; break;
+    case 'tax': h=`<div class="nm top">${sp.dn}</div><div class="ic tx">${icon('coin')}</div><div class="pr">${fmt(sp.amount)}</div>`; break;
+  }
+  return `<div class="in">${h}<div class="own"></div><div class="mtag">Hypotheek</div></div>`;
+}
+function buildBoard(){
+  const g=$('#grid'); g.innerHTML='';
+  SPACES.forEach((sp,i)=>{
+    const [r,c]=gridPos(i), el=document.createElement('div');
+    el.className=`tile ${sideClass(i)} t-${sp.type}`; el.id='t'+i; el.style.gridArea=`${r}/${c}`;
+    el.tabIndex=0; el.setAttribute('role','button');
+    el.innerHTML=tileHTML(sp,i);
+    el.addEventListener('click',()=>showSpaceInfo(i));
+    el.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); e.stopPropagation(); showSpaceInfo(i); } });
+    g.appendChild(el);
+  });
+  const c=document.createElement('div'); c.className='center';
+  c.innerHTML=`<div class="wm" aria-hidden="true"><span>${esc(SPELNAAM)}</span></div>
+    <div class="deck d-ch" aria-hidden="true"><div class="dk"></div><div class="dk b2"></div><div class="dk top">${icon('question')}<b>Kans</b></div></div>
+    <div class="deck d-cf" aria-hidden="true"><div class="dk"></div><div class="dk b2"></div><div class="dk top">${icon('chest')}<b>Algemeen Fonds</b></div></div>
+    <div class="cmid"><div class="turnlbl" id="turnLbl"></div><div class="dice" id="dice" role="img"><div class="die" id="d1"></div><div class="die" id="d2"></div></div><ol class="feed" id="feed" aria-label="Laatste gebeurtenissen"></ol></div>`;
+  g.appendChild(c);
+  $('#tokens').innerHTML=''; $('#floats').innerHTML='';
+  $$('.bld').forEach(b=>b.dataset.h='0');
+}
+function sizeBoard(){
+  if(!S||$('#game').hidden) return;
+  const area=$('#boardArea'), board=$('#board');
+  const wide=innerWidth>1024, topH=$('.top').offsetHeight;
+  let size=area.clientWidth;
+  if(wide) size=Math.min(size,innerHeight-topH-28);
+  else size=Math.min(size,Math.max(300,innerHeight-150));
+  size=Math.max(280,Math.floor(size));
+  const pad=Math.round(Math.max(5,size*.013)), gap=2, inner=size-2*pad, c=(inner-10*gap)/12.2, k=c*1.6;
+  board.style.setProperty('--size',size+'px'); board.style.setProperty('--pad',pad+'px');
+  board.style.setProperty('--c',c+'px'); board.style.setProperty('--k',k+'px');
+  board.classList.toggle('compact',c<46);
+  UI.geo={pad,gap,c,k};
+  positionTokens();
+}
+function cellBox(i){
+  const {c,k,gap}=UI.geo, [r,col]=gridPos(i);
+  const pos=n=>n===1?0:n===11?k+gap+9*(c+gap):k+gap+(n-2)*(c+gap);
+  const sz=n=>(n===1||n===11)?k:c;
+  return {x:pos(col),y:pos(r),w:sz(col),h:sz(r)};
+}
+function positionTokens(hopId){
+  if(!S||!UI.geo) return;
+  const layer=$('#tokens'), T=Math.round(Math.max(16,Math.min(34,UI.geo.c*.5)));
+  layer.style.setProperty('--t',T+'px');
+  const key=p=>p.pos+(p.pos===10&&p.inJail?'j':'');
+  const groups={};
+  S.players.forEach(p=>{ if(!p.bankrupt) (groups[key(p)]=groups[key(p)]||[]).push(p); });
+  S.players.forEach(p=>{
+    let el=$('#tok'+p.id);
+    if(p.bankrupt){ if(el) el.remove(); return; }
+    if(!el){ el=document.createElement('div'); el.className='tok'; el.id='tok'+p.id; el.innerHTML=pawn(p); el.style.setProperty('--pc',p.color); layer.appendChild(el); }
+    const grp=groups[key(p)], n=grp.length, idx=grp.indexOf(p), b=cellBox(p.pos);
+    let cx=b.x+b.w/2, cy=b.y+b.h/2;
+    const cols=n<=1?1:n<=4?2:3, rows=Math.ceil(n/cols), spc=T*.62;
+    let ox=((idx%cols)-(cols-1)/2)*spc, oy=(Math.floor(idx/cols)-(rows-1)/2)*spc;
+    if(p.pos===10){
+      if(p.inJail){ cx=b.x+b.w*.64; cy=b.y+b.h*.36; }
+      else { cx=b.x+b.w*.5; cy=b.y+b.h*.86; ox=(idx-(n-1)/2)*T*.5; oy=0; }
+    }
+    el.style.transform=`translate(${cx+ox-T/2}px,${cy+oy-T/2}px)`;
+    el.classList.toggle('cur',!S.over&&curP()===p);
+    if(hopId===p.id){ el.classList.remove('hop'); void el.offsetWidth; el.classList.add('hop'); }
+  });
+}
+function updateTiles(){
+  OWNABLE.forEach(i=>{
+    const el=$('#t'+i), pr=S.props[i], sp=SPACES[i];
+    const o=pr.owner!=null?S.players[pr.owner]:null;
+    el.style.setProperty('--oc',o?o.color:'transparent');
+    el.classList.toggle('mort',pr.mort);
+    if(sp.type==='street'){
+      const b=el.querySelector('.bld'), old=+b.dataset.h;
+      if(old!==pr.houses){
+        b.innerHTML=pr.houses===5?HOTEL_SVG:HOUSE_SVG.repeat(pr.houses);
+        if(pr.houses>old && animMs(400)){ const last=b.lastElementChild; if(last) last.classList.add('drop'); }
+        b.dataset.h=pr.houses;
+      }
+    }
+    const parts=[sp.name, sp.city||'', fmt(sp.price), o?`eigendom van ${o.name}`:'te koop'];
+    if(sp.type==='street'&&pr.houses) parts.push(pr.houses===5?'hotel':pr.houses+(pr.houses===1?' huis':' huizen'));
+    if(pr.mort) parts.push('hypotheek');
+    el.setAttribute('aria-label',parts.filter(Boolean).join(', '));
+  });
+  SPACES.forEach((sp,i)=>{ if(!isOwnable(i)) $('#t'+i).setAttribute('aria-label',sp.name); });
+  const pot=$('#potLbl'); if(pot) pot.textContent=S.settings.pot?fmt(S.pot):'';
+}
+function renderDice(landed){
+  const d1=$('#d1'), d2=$('#d2'); if(!d1) return;
+  d1.innerHTML=dieHTML(S.dice[0]); d2.innerHTML=dieHTML(S.dice[1]);
+  $('#dice').setAttribute('aria-label',`Laatste worp: ${S.dice[0]} en ${S.dice[1]}`);
+  if(landed&&animMs(400)){ [d1,d2].forEach(d=>{ d.classList.remove('land'); void d.offsetWidth; d.classList.add('land'); }); }
+}
+function groupsMini(p){
+  let h=Object.keys(GROUPS).map(g=>{ const m=GROUPS[g].leden, full=m.every(i=>S.props[i].owner===p.id); return `<span class="gb${full?' full':''}" style="--gc:${gcol(g)}" title="${GROUPS[g].naam}${full?' (compleet)':''}">${m.map(i=>`<i class="${S.props[i].owner===p.id?'o':''}"></i>`).join('')}</span>`; }).join('');
+  h+=`<span class="gb" style="--gc:var(--station)" title="Stations">${STATIONS.map(i=>`<i class="${S.props[i].owner===p.id?'o':''}"></i>`).join('')}</span>`;
+  h+=`<span class="gb" style="--gc:var(--utility)" title="Nutsbedrijven">${UTILS.map(i=>`<i class="${S.props[i].owner===p.id?'o':''}"></i>`).join('')}</span>`;
+  const jc=jailCardCount(p); if(jc) h+=`<span class="jc" title="Verlaat de gevangenis-kaart">${icon('key')}${jc}</span>`;
+  return h;
+}
+function buildPlayers(){
+  $('#players').innerHTML=S.players.map(p=>`<button class="pc" id="pc${p.id}" style="--pc:${p.color}" aria-label="Bekijk bezit van ${esc(p.name)}">${pawn(p)}<span class="pname"><b>${esc(p.name)}</b><span class="tags"></span></span><span class="money" id="pm${p.id}">${fmt(p.money)}</span><span class="groups"></span></button>`).join('');
+  $('#chips').innerHTML=S.players.map(p=>`<button class="chip" id="ch${p.id}" style="--pc:${p.color}" aria-label="Bekijk bezit van ${esc(p.name)}">${pawn(p)}<b>${esc(p.name)}</b><span class="money" id="cm${p.id}">${fmt(p.money)}</span></button>`).join('');
+  S.players.forEach(p=>{ UI.shown['pm'+p.id]=p.money; UI.shown['cm'+p.id]=p.money; $('#pc'+p.id).onclick=()=>showPlayer(p.id); $('#ch'+p.id).onclick=()=>showPlayer(p.id); });
+  $('#logFilter').innerHTML=`<option value="all">Alle spelers</option>`+S.players.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+  $('#logFilter').value=UI.logFilter;
+}
+function setMoney(id,val){
+  const el=$('#'+id); if(!el) return;
+  const from=UI.shown[id]??val; UI.shown[id]=val;
+  if(from===val){ el.textContent=fmt(val); return; }
+  el.classList.remove('up','down'); void el.offsetWidth; el.classList.add(val>from?'up':'down');
+  clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('up','down'),1300);
+  const dur=animMs(420);
+  if(!dur){ el.textContent=fmt(val); return; }
+  const t0=performance.now(), tok=(el._tok=(el._tok||0)+1);
+  const tick=t=>{ if(el._tok!==tok) return; const k=Math.min(1,(t-t0)/dur); el.textContent=fmt(from+(val-from)*k); if(k<1) requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+}
+function updatePlayers(){
+  if(!S) return;
+  S.players.forEach(p=>{
+    const on=!S.over&&curP()===p;
+    const pc=$('#pc'+p.id), ch=$('#ch'+p.id); if(!pc) return;
+    pc.classList.toggle('on',on); pc.classList.toggle('bk',p.bankrupt);
+    ch.classList.toggle('on',on); ch.classList.toggle('bk',p.bankrupt);
+    const tags=[];
+    if(p.ai) tags.push(`<span class="tag">Computer · ${LEVELS[p.level]}</span>`);
+    if(p.inJail) tags.push(`<span class="tag warn">In de gevangenis</span>`);
+    if(p.bankrupt) tags.push(`<span class="tag bad">Failliet</span>`);
+    pc.querySelector('.tags').innerHTML=tags.join('');
+    pc.querySelector('.groups').innerHTML=groupsMini(p);
+    setMoney('pm'+p.id,p.money); setMoney('cm'+p.id,p.money);
+  });
+}
+function btnHTML(a,label,ic,why){
+  return `<button class="btn sec${why?' is-disabled':''}" data-a="${a}" ${why?`aria-disabled="true" data-why="${esc(why)}"`:''}>${icon(ic)}<span>${label}</span></button>`;
+}
+function secondaryActions(p){
+  const k=UI.wait.kind, secs=[];
+  if(k==='roll'&&p.inJail){
+    secs.push(btnHTML('payjail',`Betaal ${fmt(50)}`,'coin',p.money<50?'Je hebt niet genoeg geld':''));
+    if(hasJailCard(p)) secs.push(btnHTML('usecard','Gebruik vrijkaart','key'));
+  }
+  secs.push(btnHTML('manage','Bouwen & hypotheek','build',ownedBy(p.id).length?'':'Je hebt nog geen eigendommen'));
+  secs.push(btnHTML('trade','Handelen','trade',active().length>1?'':'Er is niemand om mee te handelen'));
+  if(UI.undo.length) secs.push(btnHTML('undo','Ongedaan maken','undo'));
+  return secs;
+}
+function renderActions(){
+  const box=$('#actions'); if(!S){ box.innerHTML=''; return; }
+  if(S.over){ box.innerHTML=`<div class="act-row"><button class="btn primary big main" data-a="results">${icon('flag')}Uitslag bekijken</button><button class="btn sec" data-a="newgame">Nieuw spel</button></div>`; return; }
+  const p=curP();
+  if(!UI.wait){ box.innerHTML=`<div class="waiting">${pawn(p)}<span>${esc(p.name)} ${p.ai?'is aan zet…':'is bezig…'}${UI.paused?' <b>(gepauzeerd)</b>':''}</span></div>`; return; }
+  const k=UI.wait.kind;
+  let main, info='';
+  if(k==='roll'){
+    main=p.inJail?'Gooi voor dubbel':S.doubles>0?'Gooi opnieuw':'Gooi dobbelstenen';
+    if(p.inJail) info=`Je zit in de gevangenis (poging ${p.jailTurns+1} van 3). Gooi dubbel, betaal ${fmt(50)} of gebruik een vrijkaart.`;
+    else if(S.doubles>0) info='Je gooide dubbel, dus je mag nog een keer.';
+  } else { main='Beëindig beurt'; info='Bouwen, hypotheek en handelen kan nog voordat je je beurt beëindigt.'; }
+  const secs=secondaryActions(p).map((s,i)=>i>=2?s.replace('class="btn sec','class="btn sec x'):s);
+  box.innerHTML=`<div class="act-head">${pawn(p)}<div><b>${esc(p.name)}</b><span>${fmt(p.money)}</span></div></div>${info?`<p class="act-info">${info}</p>`:''}<div class="act-row"><button class="btn primary big main" data-a="main">${icon(k==='roll'?'dice':'flag')}${main}</button>${secs.join('')}${secs.length>2?`<button class="btn sec more" data-a="more">${icon('more')}<span>Meer</span></button>`:''}</div>`;
+}
+function renderLog(){
+  const f=UI.logFilter;
+  const items=S.log.filter(e=>f==='all'||e.p===+f).slice(0,150);
+  $('#log').innerHTML=items.map(e=>{ const p=e.p!=null?S.players[e.p]:null; return `<li>${p?pawn(p):'<span class="dot"></span>'}<span>${esc(e.t)}</span></li>`; }).join('')||'<li class="muted">Nog geen gebeurtenissen</li>';
+  $('#feed').innerHTML=S.log.slice(0,4).map(e=>{ const p=e.p!=null?S.players[e.p]:null; return `<li>${p?pawn(p):''}<span>${esc(e.t)}</span></li>`; }).join('');
+}
+function renderTop(){
+  const anyAI=S.players.some(p=>p.ai&&!p.bankrupt);
+  const bF=$('#bFast'), bP=$('#bPause');
+  bF.hidden=!anyAI; bP.hidden=!anyAI;
+  bF.setAttribute('aria-pressed',UI.fast); bF.innerHTML=`${icon('fast')}<span class="lbl">Versnellen</span>`;
+  bP.setAttribute('aria-pressed',UI.paused); bP.innerHTML=`${icon(UI.paused?'play':'pause')}<span class="lbl">${UI.paused?'Hervatten':'Pauze'}</span>`;
+  $('#bSound').setAttribute('aria-pressed',S.settings.sound); $('#bSound').innerHTML=icon(S.settings.sound?'sound':'mute'); $('#bSound').setAttribute('aria-label',S.settings.sound?'Geluid uitzetten':'Geluid aanzetten');
+  renderTimer();
+}
+function renderTimer(){
+  if(!S) return;
+  const t=S.settings.timeLimit>0?Math.max(0,S.settings.timeLimit*60000-S.elapsedMs):S.elapsedMs;
+  const m=Math.floor(t/60000), s=Math.floor(t/1000)%60;
+  $('#tinfo').textContent=`${S.settings.timeLimit>0?'Nog ':''}${m}:${String(s).padStart(2,'0')} · beurt ${S.turn}`;
+}
+function render(){
+  if(!S||$('#game').hidden) return;
+  updateTiles(); updatePlayers(); renderActions(); renderLog(); renderTop(); positionTokens();
+  const p=curP();
+  $('#turnLbl').innerHTML=S.over?`<span>Spel afgelopen</span>`:`${pawn(p)}<span>${esc(p.name)} is aan de beurt</span>`;
+  if(UI.managing) markLit();
+}
+function log(t,pid=null){ if(!S) return; S.log.unshift({t,p:pid}); if(S.log.length>400) S.log.length=400; if(!$('#game').hidden) renderLog(); }
+function toast(text,p,cls='',ms=2600){
+  const box=$('#toasts'), el=document.createElement('div');
+  el.className='toast '+(p?'':'plain ')+cls; el.innerHTML=(p?pawn(p):'')+`<span>${esc(text)}</span>`;
+  box.appendChild(el);
+  while(box.children.length>3) box.firstElementChild.remove();
+  setTimeout(()=>{ el.classList.add('out'); setTimeout(()=>el.remove(),320); },ms);
+}
+function floatAt(i,text,cls=''){
+  if(!UI.geo||!animMs(1000)) return;
+  const b=cellBox(i), el=document.createElement('div');
+  el.className='float '+cls; el.textContent=text; el.style.left=(b.x+b.w/2)+'px'; el.style.top=(b.y+b.h/2)+'px';
+  $('#floats').appendChild(el); setTimeout(()=>el.remove(),1400);
+}
+function glowTile(i,color){ const t=$('#t'+i); if(!t||!animMs(900)) return; t.style.setProperty('--glow',color); t.classList.remove('glow'); void t.offsetWidth; t.classList.add('glow'); }
+
+/* ================= Vensters ================= */
+const LAYERS={1:{sel:'#ovl',res:null,opts:null},2:{sel:'#ovl2',res:null,opts:null}};
+function openModal(n,o){
+  const L=LAYERS[n], ov=$(L.sel), box=ov.querySelector('.mdl');
+  if(L.res){ const r=L.res; L.res=null; r(null); }
+  L.opts=o; ov.className='ovl '+(o.cls||''); ov.style.cssText=o.style||'';
+  box.innerHTML=o.html; ov.hidden=false; box.scrollTop=0;
+  setTimeout(()=>{ if(ov.hidden) return; const f=box.querySelector('.btn.primary:not(.is-disabled)')||box.querySelector('button:not(.is-disabled),input,select'); if(f) f.focus({preventScroll:true}); },40);
+  return new Promise(r=>{ L.res=r; });
+}
+function refreshModal(n,html){ const box=$(LAYERS[n].sel+' .mdl'), st=box.scrollTop; box.innerHTML=html; box.scrollTop=st; }
+function closeModal(n,v){ const L=LAYERS[n], ov=$(L.sel); ov.hidden=true; ov.querySelector('.mdl').innerHTML=''; const r=L.res; L.res=null; L.opts=null; if(r) r(v); }
+function dropModals(){ [1,2].forEach(n=>{ LAYERS[n].res=null; LAYERS[n].opts=null; $(LAYERS[n].sel).hidden=true; }); }
+const modalOpen = n => !$(LAYERS[n].sel).hidden;
+function initModals(){
+  [1,2].forEach(n=>{
+    const ov=$(LAYERS[n].sel), box=ov.querySelector('.mdl');
+    box.addEventListener('click',e=>{
+      const L=LAYERS[n], b=e.target.closest('[data-v],[data-act]');
+      if(!b||!box.contains(b)) return;
+      if(b.classList.contains('is-disabled')){ e.preventDefault(); toast(b.dataset.why||'Dit kan nu niet'); return; }
+      if(b.hasAttribute('data-v')) closeModal(n,b.dataset.v);
+      else if(L.opts&&L.opts.onAct) L.opts.onAct(b.dataset.act,b,e);
+    });
+    box.addEventListener('input',e=>{ const L=LAYERS[n]; if(L.opts&&L.opts.onInput) L.opts.onInput(e.target,e); });
+    box.addEventListener('change',e=>{ const L=LAYERS[n]; if(L.opts&&L.opts.onChange) L.opts.onChange(e.target,e); });
+    ov.addEventListener('click',e=>{ if(e.target===ov&&LAYERS[n].opts&&LAYERS[n].opts.dismiss) closeModal(n,null); });
+  });
+}
+
+/* ================= Informatievensters ================= */
+function deedHTML(i){
+  const sp=SPACES[i], pr=S?S.props[i]:null, owner=pr&&pr.owner!=null?S.players[pr.owner]:null;
+  let head='', rows='', foot='';
+  if(sp.type==='street'){
+    const g=GROUPS[sp.group], dark=LIGHT_GROUPS.has(sp.group);
+    head=`<div class="deed-h" style="--dc:${gcol(sp.group)};--dt:${dark?'#1B2422':'#FFFFFF'}"><small>Eigendomsbewijs</small><b>${esc(sp.name)}</b><span>${esc(sp.city)}</span></div>`;
+    const cur=pr&&owner?pr.houses:-1, mono=owner&&hasMonopoly(owner.id,sp.group)&&pr.houses===0;
+    rows=`<tr class="${cur===0&&!mono?'cur':''}"><td>Huur</td><td>${fmt(sp.rent[0])}</td></tr><tr class="${mono?'cur':''}"><td>Met hele groep</td><td>${fmt(sp.rent[0]*2)}</td></tr>`+
+      [1,2,3,4].map(n=>`<tr class="${cur===n?'cur':''}"><td>Met ${n} ${n===1?'huis':'huizen'}<span class="hs">${HOUSE_SVG.repeat(n)}</span></td><td>${fmt(sp.rent[n])}</td></tr>`).join('')+
+      `<tr class="${cur===5?'cur':''}"><td>Met hotel<span class="hs">${HOTEL_SVG}</span></td><td>${fmt(sp.rent[5])}</td></tr>`;
+    foot=`<span>Huis ${fmt(g.huis)} · hotel ${fmt(g.huis)} + 4 huizen</span><span>Hypotheekwaarde ${fmt(sp.price/2)}</span>`;
+  } else if(sp.type==='station'){
+    head=`<div class="deed-h" style="--dc:var(--station);--dt:var(--station-t)">${icon('train')}<b>${esc(sp.name)}</b></div>`;
+    const n=owner?STATIONS.filter(s=>S.props[s].owner===owner.id).length:0;
+    rows=[1,2,3,4].map(k=>`<tr class="${n===k?'cur':''}"><td>Met ${k} ${k===1?'station':'stations'}</td><td>${fmt(25*Math.pow(2,k-1))}</td></tr>`).join('');
+    foot=`<span>Hypotheekwaarde ${fmt(sp.price/2)}</span>`;
+  } else {
+    head=`<div class="deed-h" style="--dc:var(--utility);--dt:#FFFFFF">${icon(sp.kind==='elec'?'bulb':'tap')}<b>${esc(sp.name)}</b></div>`;
+    const n=owner?UTILS.filter(s=>S.props[s].owner===owner.id).length:0;
+    rows=`<tr class="${n===1?'cur':''}"><td>Met 1 nutsbedrijf</td><td>4× ogen</td></tr><tr class="${n===2?'cur':''}"><td>Met beide</td><td>10× ogen</td></tr>`;
+    foot=`<span>Hypotheekwaarde ${fmt(sp.price/2)}</span>`;
+  }
+  const ol=owner?`<div class="deed-o">${pawn(owner)}<span>Eigenaar: <b>${esc(owner.name)}</b>${pr.mort?` · <b class="neg">Hypotheek</b> (aflossen ${fmt(unmortCost(i))})`:''}</span></div>`:`<div class="deed-o"><span class="muted">Te koop voor <b>${fmt(sp.price)}</b></span></div>`;
+  return `<div class="deed${pr&&pr.mort?' m':''}">${head}<table>${rows}</table><div class="deed-f">${foot}</div>${ol}</div>`;
+}
+const SPACE_INFO = {
+  go:'Ontvang €200 salaris elke keer dat je Start passeert of erop landt.',
+  jail:'Sta je hier zonder straf, dan ben je alleen op bezoek. Zit je vast, dan kom je vrij door dubbel te gooien, €50 te betalen of een vrijkaart te gebruiken. Na 3 mislukte pogingen betaal je verplicht €50.',
+  parking:'Hier gebeurt niets. Met de huisregel "Vrij Parkeren-pot" krijg je hier alle belastingen en boetes.',
+  gotojail:'Ga direct naar de gevangenis. Je passeert Start niet en ontvangt geen €200.',
+  chance:'Trek een Kans-kaart en volg de opdracht.',
+  chest:'Trek een Algemeen Fonds-kaart en volg de opdracht.'
+};
+function showSpaceInfo(i){
+  if(!S) return;
+  const sp=SPACES[i];
+  let body;
+  if(isOwnable(i)) body=deedHTML(i);
+  else if(sp.type==='tax') body=`<h2>${esc(sp.name)}</h2><p>Betaal ${fmt(sp.amount)} aan de bank${S.settings.pot?' (gaat naar de pot op Vrij Parkeren)':''}.</p>`;
+  else body=`<h2>${esc(sp.name)}</h2><p>${SPACE_INFO[sp.type]}</p>${sp.type==='parking'&&S.settings.pot?`<p>In de pot: <b class="num">${fmt(S.pot)}</b></p>`:''}`;
+  openModal(2,{html:`${body}<div class="btns"><button class="btn primary" data-v="ok">Sluiten</button></div>`,dismiss:true});
+}
+function showPlayer(id){
+  const p=S.players[id], own=ownedBy(id);
+  const list=own.map(i=>{ const pr=S.props[i]; return `<li><span class="sw" style="background:${swatch(i)}"></span><span>${esc(SPACES[i].name)}</span><span class="muted small" style="margin-left:auto">${pr.mort?'Hypotheek':pr.houses===5?'Hotel':pr.houses?pr.houses+(pr.houses===1?' huis':' huizen'):''}</span></li>`; }).join('');
+  openModal(2,{html:`<div class="bidder">${pawn(p)}<div><b>${esc(p.name)}</b><span class="muted small">${p.ai?'Computer · '+LEVELS[p.level]:'Mens'}${p.inJail?' · in de gevangenis':''}${p.bankrupt?' · failliet':''}</span></div></div>
+    <div class="kv" style="margin-top:12px"><span>Geld</span><b>${fmt(p.money)}</b><span>Vermogen</span><b>${fmt(netWorth(p))}</b><span>Huur ontvangen</span><b>${fmt(p.stats.rent)}</b><span>Vrijkaarten</span><b>${jailCardCount(p)}</b></div>
+    <h3 style="margin-top:16px">Eigendommen (${own.length})</h3>${own.length?`<ul class="offer">${list}</ul>`:'<p class="muted">Nog geen eigendommen.</p>'}
+    <div class="btns"><button class="btn primary" data-v="ok">Sluiten</button></div>`,dismiss:true});
+}
+function rulesHTML(){
+  return `<p class="eyebrow">${icon('help')}Spelregels</p><h2>Zo speel je ${esc(SPELNAAM)}</h2><div class="rules">
+  <details open><summary>Doel van het spel</summary><p>Koop straten, stations en nutsbedrijven, bouw huizen en hotels en laat je tegenspelers huur betalen. Wie als laatste overblijft, wint. Met een tijdslimiet wint het hoogste vermogen.</p></details>
+  <details><summary>Je beurt</summary><ul><li>Gooi met twee dobbelstenen en loop met de klok mee.</li><li>Gooi je dubbel, dan mag je nog een keer. Na 3× dubbel ga je naar de gevangenis.</li><li>Elke keer dat je Start passeert of erop landt, krijg je €200.</li></ul></details>
+  <details><summary>Kopen en veilen</summary><p>Land je op een vrij eigendom, dan mag je het kopen. Doe je dat niet, dan wordt het geveild onder alle spelers. De hoogste bieder betaalt zijn bod.</p></details>
+  <details><summary>Huur</summary><ul><li>Straat: huur volgens de akte. Heeft de eigenaar de hele kleurgroep en staan er geen huizen, dan is de huur dubbel.</li><li>Stations: €25, €50, €100 of €200 bij 1 tot 4 stations.</li><li>Nutsbedrijven: 4× de ogen, of 10× met beide.</li><li>Op een eigendom met hypotheek betaal je geen huur.</li></ul></details>
+  <details><summary>Bouwen</summary><ul><li>Je bouwt alleen met een complete kleurgroep zonder hypotheken.</li><li>Bouw gelijkmatig: het verschil per straat is hoogstens één huis.</li><li>Na 4 huizen kun je een hotel bouwen. De bank heeft 32 huizen en 12 hotels.</li><li>Gebouwen verkoop je aan de bank voor de halve prijs.</li></ul></details>
+  <details><summary>Hypotheek</summary><p>Op een onbebouwd eigendom kun je een hypotheek nemen voor de helft van de prijs. Aflossen kost die waarde plus 10% rente.</p></details>
+  <details><summary>Gevangenis</summary><p>In de gevangenis kom je vrij door dubbel te gooien, €50 te betalen of een vrijkaart te gebruiken. Na 3 beurten zonder dubbel betaal je verplicht €50. Je ontvangt in de gevangenis gewoon huur.</p></details>
+  <details><summary>Kans en Algemeen Fonds</summary><p>Elke stapel heeft 16 kaarten (Kans heeft de stationskaart twee keer). Een getrokken kaart gaat onderop terug. Een vrijkaart mag je bewaren of ruilen.</p></details>
+  <details><summary>Handelen</summary><p>In je eigen beurt kun je ruilen met iedere speler: straten zonder gebouwen, geld en vrijkaarten. Krijg je een eigendom met hypotheek, dan betaal je direct 10% rente.</p></details>
+  <details><summary>Schulden en faillissement</summary><p>Kun je niet betalen, dan verkoop je gebouwen of neem je hypotheken. Lukt dat niet, dan ben je failliet. Bij een schuld aan een speler krijgt die al je bezit; bij een schuld aan de bank worden je eigendommen geveild.</p></details>
+  <details><summary>Bediening</summary><ul><li><span class="kbd">Spatie</span> gooien of beurt beëindigen</li><li><span class="kbd">Enter</span> bevestigen</li><li><span class="kbd">Esc</span> venster sluiten</li><li><span class="kbd">B</span> bouwen &amp; hypotheek, <span class="kbd">H</span> handelen</li><li>Tik op een vak voor de eigendomskaart.</li></ul></details>
+  </div><div class="btns"><button class="btn primary" data-v="ok">Sluiten</button></div>`;
+}
+const openRules = () => openModal(2,{html:rulesHTML(),cls:'wide',dismiss:true});
+function openMore(){
+  const p=curP(); if(!UI.wait) return;
+  openModal(2,{html:`<h2>Meer acties</h2><div class="menu">${secondaryActions(p).map(s=>s.replace('data-a=','data-act=')).join('')}</div><div class="btns"><button class="btn" data-v="">Sluiten</button></div>`,cls:'sheet',dismiss:true,onAct:(a)=>{ closeModal(2,null); doAction(a); }});
+}
+function openMenu(){
+  const draw=()=>`<h2>Menu</h2><div class="menu">
+    <div class="setrow"><label for="mHints">Hulp-hints<span>Tips op het juiste moment</span></label><input type="checkbox" class="switch" id="mHints" ${S.settings.hints?'checked':''}></div>
+    <div class="setrow"><label for="mAnim">Animaties</label><select class="inp" id="mAnim">${['volledig','beperkt','uit'].map(v=>`<option value="${v}" ${S.settings.anim===v?'selected':''}>${v[0].toUpperCase()+v.slice(1)}</option>`).join('')}</select></div>
+    <button class="btn" data-act="rules">${icon('help')}Spelregels</button>
+    <button class="btn danger" data-act="quit">Terug naar startscherm</button>
+    <p class="muted small">Je spel wordt automatisch opgeslagen. Via “Doorgaan met vorig spel” ga je later verder.</p>
+  </div><div class="btns"><button class="btn primary" data-v="">Sluiten</button></div>`;
+  openModal(2,{html:draw(),cls:'sheet',dismiss:true,
+    onChange:(t)=>{ if(t.id==='mHints') S.settings.hints=t.checked; if(t.id==='mAnim') S.settings.anim=t.value; save(); },
+    onAct:(a)=>{ if(a==='rules'){ closeModal(2,null); openRules(); } if(a==='quit'){ closeModal(2,null); confirmQuit(); } }});
+}
+async function confirmQuit(){
+  const v=await openModal(2,{html:`<h2>Terug naar het startscherm?</h2><p class="muted">${S.over?'Het spel is afgelopen.':'Je spel is opgeslagen tot het begin van deze beurt. Je kunt het later hervatten.'}</p><div class="btns"><button class="btn primary" data-v="yes">Ja, naar startscherm</button><button class="btn" data-v="">Blijf spelen</button></div>`,dismiss:true});
+  if(v==='yes') quitToSetup();
+}
+function openDebug(){
+  if(!S||S.over) return;
+  const p=curP();
+  const cards=[...CHANCE.map((c,i)=>`<option value="chance:${i}">Kans ${i+1}: ${esc(c.t)}</option>`),...CHEST.map((c,i)=>`<option value="chest:${i}">Fonds ${i+1}: ${esc(c.t)}</option>`)].join('');
+  openModal(2,{html:`<p class="eyebrow">Shift + D</p><h2>Debugpaneel</h2><div class="dbg">
+    <div class="r"><select class="inp" id="dbP">${S.players.filter(x=>!x.bankrupt).map(x=>`<option value="${x.id}" ${x===p?'selected':''}>${esc(x.name)}</option>`).join('')}</select></div>
+    <div class="r"><select class="inp" id="dbT">${SPACES.map((s,i)=>`<option value="${i}">${i}: ${esc(s.name)}</option>`).join('')}</select><button class="btn s" data-act="move">Verplaats</button></div>
+    <div class="r"><input class="inp" type="number" min="1" max="6" value="3" id="dbA" aria-label="Dobbelsteen 1"><input class="inp" type="number" min="1" max="6" value="3" id="dbB" aria-label="Dobbelsteen 2"><button class="btn s" data-act="dice">Vaste worp (volgende)</button></div>
+    <div class="r"><button class="btn s" data-act="money">+€500</button><button class="btn s" data-act="minus">−€500</button><button class="btn s" data-act="spread">Verdeel eigendommen willekeurig</button></div>
+    <div class="r"><select class="inp" id="dbC">${cards}</select><button class="btn s" data-act="card">Trek kaart</button></div>
+    </div><div class="btns"><button class="btn primary" data-v="">Sluiten</button></div>`,dismiss:true,onAct:async(a)=>{
+      const box=$('#ovl2 .mdl'), sel=S.players[+$('#dbP',box).value];
+      if(a==='move'){ sel.pos=+$('#dbT',box).value; sel.inJail=false; positionTokens(); render(); toast(`${sel.name} staat nu op ${SPACES[sel.pos].name}`); }
+      if(a==='dice'){ const x=Math.min(6,Math.max(1,+$('#dbA',box).value||1)), y=Math.min(6,Math.max(1,+$('#dbB',box).value||1)); UI.fixedDice=[x,y]; toast(`Volgende worp: ${x} + ${y}`); }
+      if(a==='money'){ sel.money+=500; render(); }
+      if(a==='minus'){ sel.money-=500; render(); toast('Let op: negatief saldo wordt pas bij de volgende betaling afgehandeld'); }
+      if(a==='spread'){ const ids=active().map(x=>x.id); OWNABLE.forEach(i=>{ if(S.props[i].owner==null) S.props[i].owner=ids[Math.floor(Math.random()*ids.length)]; }); render(); save(); toast('Alle vrije eigendommen zijn verdeeld'); }
+      if(a==='card'){
+        const cp=curP(); if(!UI.wait||cp.ai){ toast('Een kaart trekken kan alleen tijdens de beurt van een menselijke speler'); return; }
+        const [deck,id]=$('#dbC',box).value.split(':'); closeModal(2,null);
+        const w=UI.wait; UI.wait=null; render();
+        await drawCard(cp,deck,+id);
+        if(cp.bankrupt||S.over) w.resolve(); else { UI.wait=w; render(); save(); }
+      }
+    }});
+}
+
+/* ================= Acties & toetsen ================= */
+function doAction(a){
+  const p=S&&curP();
+  switch(a){
+    case 'main': mainAction(); break;
+    case 'payjail': if(UI.wait&&p.inJail) payJail(p); break;
+    case 'usecard': if(UI.wait&&p.inJail&&hasJailCard(p)) useJailCard(p); break;
+    case 'manage': openManage(); break;
+    case 'trade': openTrade(); break;
+    case 'undo': undo(); break;
+    case 'more': openMore(); break;
+    case 'results': showResults(); break;
+    case 'newgame': quitToSetup(); break;
+  }
+}
+document.addEventListener('keydown',e=>{
+  if(e.shiftKey&&(e.key==='D'||e.key==='d')&&S&&!$('#game').hidden){ const tag=(e.target.tagName||'').toLowerCase(); if(tag!=='input'&&tag!=='select'){ e.preventDefault(); openDebug(); return; } }
+  if(e.key==='Escape'){
+    if(modalOpen(2)&&LAYERS[2].opts&&LAYERS[2].opts.dismiss) closeModal(2,null);
+    else if(modalOpen(1)&&LAYERS[1].opts&&LAYERS[1].opts.dismiss) closeModal(1,null);
+    return;
+  }
+  const tag=(e.target.tagName||'').toLowerCase();
+  if(tag==='input'||tag==='select'||tag==='textarea') return;
+  if(e.key==='Enter'){
+    if(document.activeElement&&document.activeElement.tagName==='BUTTON') return;
+    const ov=modalOpen(2)?'#ovl2':modalOpen(1)?'#ovl':null;
+    if(ov){ const b=$(ov+' .btn.primary:not(.is-disabled)'); if(b){ e.preventDefault(); b.click(); } }
+    return;
+  }
+  if(!S||$('#game').hidden||modalOpen(1)||modalOpen(2)) return;
+  if(e.key===' '&&UI.wait){ if(document.activeElement&&document.activeElement.tagName==='BUTTON') return; e.preventDefault(); mainAction(); }
+  else if((e.key==='b'||e.key==='B')&&UI.wait) openManage();
+  else if((e.key==='h'||e.key==='H')&&UI.wait) openTrade();
+});
+
+/* ================= Geluid ================= */
+let AC=null;
+function sfx(kind){
+  if(!S||!S.settings.sound) return;
+  try{
+    AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    if(AC.state==='suspended') AC.resume();
+    const T=(f,d,type='sine',v=.05,dl=0)=>{ const o=AC.createOscillator(), g=AC.createGain(), t=AC.currentTime+dl; o.type=type; o.frequency.value=f; g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(v,t+.01); g.gain.exponentialRampToValueAtTime(.0001,t+d); o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+d+.03); };
+    switch(kind){
+      case 'dice': for(let k=0;k<5;k++) T(300+Math.random()*400,.04,'square',.02,k*.07); break;
+      case 'step': T(540,.035,'triangle',.025); break;
+      case 'buy': T(880,.09,'sine',.06); T(1320,.16,'sine',.05,.08); break;
+      case 'coin': T(1046,.08,'sine',.05); T(1568,.12,'sine',.04,.06); break;
+      case 'pay': T(330,.12,'triangle',.04); break;
+      case 'jail': T(220,.25,'sawtooth',.025); T(165,.3,'sawtooth',.025,.15); break;
+      case 'build': T(660,.06,'square',.025); break;
+      case 'win': [523,659,784,1046].forEach((f,k)=>T(f,.2,'sine',.05,k*.12)); break;
+      case 'bk': T(196,.4,'sawtooth',.025); break;
+    }
+  }catch(e){}
+}
+
+/* ================= Opslaan & thema ================= */
+function save(){ if(!S||S.over) return; try{ UI.lastSave=JSON.stringify(S); localStorage.setItem(SAVE_KEY,UI.lastSave); }catch(e){} }
+function applyTheme(){
+  const r=document.documentElement;
+  if(prefs.theme==='system') r.removeAttribute('data-theme'); else r.setAttribute('data-theme',prefs.theme);
+}
+function toggleTheme(){
+  const sysDark=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches;
+  const cur=prefs.theme==='system'?(sysDark?'dark':'light'):prefs.theme;
+  prefs.theme=cur==='dark'?'light':'dark';
+  store.set(PREF_KEY,prefs); applyTheme();
+  toast(prefs.theme==='dark'?'Donker thema':'Licht thema');
+}
+
+/* ================= Startscherm ================= */
+const setup={mode:null,tab:'spelers',players:[],settings:{startMoney:1500,pot:false,doubleGo:false,auctions:true,timeLimit:0,anim:'volledig',sound:false,hints:true}};
+if(prefs.settings) Object.assign(setup.settings,prefs.settings);
+function defaultPlayers(mode){
+  if(mode==='samen') return [{name:'Speler 1',token:'auto',ai:false,level:'normaal'},{name:'Speler 2',token:'hoed',ai:false,level:'normaal'},{name:'Speler 3',token:'hond',ai:false,level:'normaal'}];
+  return [{name:'Jij',token:'auto',ai:false,level:'normaal'},{name:'Bram',token:'hoed',ai:true,level:'normaal'},{name:'Fleur',token:'hond',ai:true,level:'normaal'},{name:'Daan',token:'schip',ai:true,level:'normaal'}];
+}
+function fdeed(g,name,city,price,rent){
+  return `<div class="fdeed"><div class="fd-h" style="background:${gcol(g)};color:${LIGHT_GROUPS.has(g)?'#1B2422':'#FFFFFF'}"><small>Eigendomsbewijs</small><b>${name}</b><span>${city}</span></div><div class="fd-b"><span>Huur</span><span>€${rent}</span><span>Met hotel</span><span>€${({Neude:950,Heerestraat:1100,Kalverstraat:2000})[name]}</span><span>Prijs</span><span>€${price}</span></div></div>`;
+}
+function renderSetup(){
+  const saved=store.get(SAVE_KEY);
+  const P=setup.players;
+  const nH=P.filter(p=>!p.ai).length, nA=P.length-nH;
+  const playersHTML=`<div class="plist">${P.map((p,i)=>`<div class="prow" data-i="${i}">
+      <button class="pawnbtn" data-sact="token" aria-label="Pion: ${PAWNS[p.token].naam}. Klik voor een andere pion" title="Andere pion kiezen">${pawnSVG(p.token,PCOLORS[i])}</button>
+      <input class="inp" id="pname${i}" data-sact="name" value="${esc(p.name)}" maxlength="14" aria-label="Naam speler ${i+1}">
+      <div class="seg" role="group" aria-label="Mens of computer"><button data-sact="human" class="${!p.ai?'on':''}" aria-pressed="${!p.ai}">Mens</button><button data-sact="ai" class="${p.ai?'on':''}" aria-pressed="${p.ai}">Computer</button></div>
+      ${p.ai?`<select class="inp lvl" id="plvl${i}" data-sact="level" aria-label="Niveau van ${esc(p.name)}">${Object.keys(LEVELS).map(l=>`<option value="${l}" ${p.level===l?'selected':''}>${LEVELS[l]}</option>`).join('')}</select>`:'<span class="lvl"></span>'}
+      ${P.length>2?`<button class="iconbtn rm" data-sact="remove" aria-label="Verwijder ${esc(p.name)}">✕</button>`:'<span class="rm"></span>'}
+    </div>`).join('')}</div>
+    ${P.length<6?`<button class="btn" data-sact="add" style="justify-self:start">+ Speler toevoegen</button>`:''}`;
+  const s=setup.settings;
+  const sw=(id,label,desc,val)=>`<div class="setrow"><label for="${id}">${label}<span>${desc}</span></label><input type="checkbox" class="switch" id="${id}" ${val?'checked':''}></div>`;
+  const settingsHTML=`<div>
+    <div class="setrow"><label for="sMoney">Startbedrag<span>Officieel ${fmt(1500)}</span></label><input class="inp num" type="number" id="sMoney" min="500" max="5000" step="100" value="${s.startMoney}"></div>
+    ${sw('sAuct','Veilingen','Officiële regel: een geweigerd eigendom wordt geveild',s.auctions)}
+    ${sw('sPot','Vrij Parkeren-pot','Huisregel: belastingen en boetes gaan naar een pot',s.pot)}
+    ${sw('sDouble','Dubbel geld op Start','Huisregel: €400 als je precies op Start landt',s.doubleGo)}
+    <div class="setrow"><label for="sTime">Tijdslimiet<span>Bij afloop wint het hoogste vermogen</span></label><select class="inp" id="sTime">${[0,30,60,90].map(v=>`<option value="${v}" ${s.timeLimit===v?'selected':''}>${v?v+' minuten':'Uit'}</option>`).join('')}</select></div>
+    <div class="setrow"><label for="sAnim">Animaties<span>Beperkt of uit voor sneller spelen</span></label><select class="inp" id="sAnim">${['volledig','beperkt','uit'].map(v=>`<option value="${v}" ${s.anim===v?'selected':''}>${v[0].toUpperCase()+v.slice(1)}</option>`).join('')}</select></div>
+    ${sw('sSound','Geluid','Zachte geluidjes bij gooien en kopen',s.sound)}
+    ${sw('sHints','Hulp-hints','Tips op het juiste moment',s.hints)}
+  </div>`;
+  $('#setup').innerHTML=`
+    <div class="hero">
+      <div class="hero-txt"><p class="eyebrow">Het klassieke Nederlandse bordspel</p><h1>${esc(SPELNAAM)}</h1><p class="lede">Koop straten van de Dorpsstraat tot de Kalverstraat, bouw huizen en hotels en laat je tegenspelers huur betalen.</p>
+      <div class="strip8" aria-hidden="true">${Object.keys(GROUPS).map(g=>`<i style="background:${gcol(g)}"></i>`).join('')}</div></div>
+      <div class="fdecks" aria-hidden="true">${fdeed('oranje','Neude','Utrecht',180,14)}${fdeed('rood','Heerestraat','Groningen',240,20)}${fdeed('donkerblauw','Kalverstraat','Amsterdam',400,50)}</div>
+    </div>
+    <div class="modes" role="group" aria-label="Kies een speelmodus">
+      <button class="mode ${setup.mode==='samen'?'sel':''}" data-mode="samen" aria-pressed="${setup.mode==='samen'}"><span class="mi">${icon('people')}</span><h3>Samen spelen</h3><p>Speel met 2 tot 6 personen op dit apparaat. Geef het scherm door als je beurt voorbij is.</p></button>
+      <button class="mode ${setup.mode==='computer'?'sel':''}" data-mode="computer" aria-pressed="${setup.mode==='computer'}"><span class="mi">${icon('cpu')}</span><h3>Tegen de computer</h3><p>Speel alleen tegen 1 tot 5 computerspelers, op makkelijk, normaal of moeilijk.</p></button>
+    </div>
+    <div class="links">${saved&&!saved.over?`<button class="btn primary" data-sact="resume">Doorgaan met vorig spel</button>`:''}<button class="btn" data-sact="rules">${icon('help')}Spelregels</button><button class="btn" data-sact="theme">${icon('theme')}Thema</button></div>
+    ${setup.mode?`<section class="config" id="config">
+      <div class="tabs" role="tablist"><button role="tab" aria-selected="${setup.tab==='spelers'}" class="${setup.tab==='spelers'?'on':''}" data-tab="spelers">Spelers</button><button role="tab" aria-selected="${setup.tab==='inst'}" class="${setup.tab==='inst'?'on':''}" data-tab="inst">Instellingen</button></div>
+      ${setup.tab==='spelers'?playersHTML:settingsHTML}
+      <div class="cfg-foot"><p class="muted">${nH} ${nH===1?'mens':'mensen'}${nA?` en ${nA} computer${nA===1?'speler':'spelers'}`:''} · ${fmt(s.startMoney)} startgeld</p><button class="btn primary big" data-sact="start">${icon('dice')}Start spel</button></div>
+    </section>`:''}`;
+}
+function freeAIName(){ const used=new Set(setup.players.map(p=>p.name)); return AI_NAMES.find(n=>!used.has(n))||'Computer'; }
+function initSetupEvents(){
+  const el=$('#setup');
+  el.addEventListener('click',e=>{
+    const m=e.target.closest('[data-mode]');
+    if(m){ if(setup.mode!==m.dataset.mode){ setup.mode=m.dataset.mode; setup.players=defaultPlayers(setup.mode); setup.tab='spelers'; } renderSetup(); const c=$('#config'); if(c) c.scrollIntoView({behavior:RM.matches?'auto':'smooth',block:'nearest'}); return; }
+    const t=e.target.closest('[data-tab]');
+    if(t){ setup.tab=t.dataset.tab; renderSetup(); return; }
+    const b=e.target.closest('[data-sact]'); if(!b) return;
+    const row=b.closest('.prow'), i=row?+row.dataset.i:-1, p=setup.players[i];
+    switch(b.dataset.sact){
+      case 'token':{ const used=new Set(setup.players.filter((_,k)=>k!==i).map(x=>x.token)); let k=TOKENS.indexOf(p.token); do{ k=(k+1)%TOKENS.length; }while(used.has(TOKENS[k])); p.token=TOKENS[k]; renderSetup(); $$('.pawnbtn')[i].focus(); break; }
+      case 'human': if(p.ai){ p.ai=false; if(AI_NAMES.includes(p.name)) p.name='Speler '+(i+1); renderSetup(); } break;
+      case 'ai': if(!p.ai){ p.ai=true; if(/^Speler \d$|^Jij$/.test(p.name)) p.name=freeAIName(); renderSetup(); } break;
+      case 'remove': setup.players.splice(i,1); renderSetup(); break;
+      case 'add':{ const used=new Set(setup.players.map(x=>x.token)); const tok=TOKENS.find(x=>!used.has(x)); const ai=setup.mode==='computer'; setup.players.push({name:ai?freeAIName():'Speler '+(setup.players.length+1),token:tok,ai,level:'normaal'}); renderSetup(); break; }
+      case 'start': startGame(); break;
+      case 'resume': { const s=store.get(SAVE_KEY); if(s) resumeGame(s); break; }
+      case 'rules': S=S||null; openModal(2,{html:rulesHTML(),cls:'wide',dismiss:true}); break;
+      case 'theme': toggleTheme(); break;
+    }
+  });
+  el.addEventListener('input',e=>{ const t=e.target; if(t.dataset.sact==='name'){ setup.players[+t.closest('.prow').dataset.i].name=t.value; } });
+  el.addEventListener('change',e=>{
+    const t=e.target, s=setup.settings;
+    if(t.dataset.sact==='level'){ setup.players[+t.closest('.prow').dataset.i].level=t.value; return; }
+    if(t.id==='sMoney') s.startMoney=Math.min(5000,Math.max(500,Math.round((+t.value||1500)/100)*100));
+    if(t.id==='sAuct') s.auctions=t.checked; if(t.id==='sPot') s.pot=t.checked; if(t.id==='sDouble') s.doubleGo=t.checked;
+    if(t.id==='sTime') s.timeLimit=+t.value; if(t.id==='sAnim') s.anim=t.value; if(t.id==='sSound') s.sound=t.checked; if(t.id==='sHints') s.hints=t.checked;
+    prefs.settings={...s}; store.set(PREF_KEY,prefs);
+    if(t.id==='sMoney') renderSetup();
+  });
+}
+async function startGame(){
+  if(setup.players.length<2){ toast('Je hebt minimaal 2 spelers nodig'); return; }
+  const cfg=setup.players.map((p,i)=>({...p,name:(p.name||'').trim()||(p.ai?AI_NAMES[i%5]:'Speler '+(i+1)),color:PCOLORS[i]}));
+  const rows=cfg.map(p=>{ const a=d6(), b=d6(); return {p,a,b,t:a+b,r:Math.random()}; });
+  const sorted=[...rows].sort((x,y)=>y.t-x.t||y.r-x.r);
+  const md=n=>`<span class="mdie">${dieHTML(n)}</span>`;
+  await openModal(1,{html:`<p class="eyebrow">Beurtvolgorde</p><h2>Wie begint?</h2><p class="muted">Iedereen gooit één keer. De hoogste worp begint.</p>
+    <ol class="order">${sorted.map((r,k)=>`<li style="--d:${(k*.12).toFixed(2)}s"><span class="rk">${k+1}</span>${pawnSVG(r.p.token,r.p.color)}<span>${esc(r.p.name)}</span><span class="mdice">${md(r.a)}${md(r.b)}</span><b>${r.t}</b></li>`).join('')}</ol>
+    <div class="btns"><button class="btn primary big" data-v="ok">${esc(sorted[0].p.name)} begint</button></div>`});
+  const players=sorted.map(r=>r.p), settings={...setup.settings};
+  UI.gen++;
+  S={v:1,mode:setup.mode,settings,players:players.map((p,i)=>({id:i,name:p.name,token:p.token,color:p.color,ai:!!p.ai,level:p.level||'normaal',money:settings.startMoney,pos:0,inJail:false,jailTurns:0,bankrupt:false,bankruptAt:0,stats:{rent:0,jail:0},tradeCd:{}})),
+    props:{},houses:32,hotels:12,decks:{chance:shuffle(CHANCE.map((_,i)=>i)),chest:shuffle(CHEST.map((_,i)=>i))},jailCards:{chance:null,chest:null},
+    cur:0,phase:'preroll',doubles:0,dice:[3,4],pot:0,log:[],turn:1,elapsedMs:0,over:false};
+  OWNABLE.forEach(i=>{ S.props[i]={owner:null,houses:0,mort:false}; });
+  showGame();
+  log(`Het spel begint. ${S.players[0].name} mag als eerste gooien.`);
+  UI.holder=null;
+  gameLoop();
+}
+function showGame(){
+  $('#setup').hidden=true; $('#game').hidden=false;
+  UI.wait=null; UI.undo=[]; UI.shown={}; UI.managing=false; UI.logFilter='all';
+  $('#brandName').textContent=SPELNAAM;
+  buildBoard(); buildPlayers();
+  sizeBoard(); renderDice(false); render();
+  requestAnimationFrame(()=>{ sizeBoard(); render(); });
+  window.scrollTo(0,0);
+}
+function resumeGame(data){
+  UI.gen++; S=data; UI.holder=null;
+  showGame(); log('Spel hervat'); gameLoop();
+}
+function quitToSetup(){
+  UI.gen++; UI.wait=null; dropModals(); save();
+  S=null; UI.lastSave=null;
+  $('#game').hidden=true; $('#setup').hidden=false;
+  renderSetup(); window.scrollTo(0,0);
+}
+
+/* ================= Opstarten ================= */
+function initGameUI(){
+  $('#actions').addEventListener('click',e=>{ const b=e.target.closest('[data-a]'); if(!b) return; if(b.classList.contains('is-disabled')){ toast(b.dataset.why); return; } doAction(b.dataset.a); });
+  $('#logFilter').addEventListener('change',e=>{ UI.logFilter=e.target.value; renderLog(); });
+  $('#bFast').onclick=()=>{ UI.fast=!UI.fast; renderTop(); toast(UI.fast?'Computerbeurten versneld':'Normale snelheid'); };
+  $('#bPause').onclick=()=>{ UI.paused=!UI.paused; render(); toast(UI.paused?'Spel gepauzeerd':'Spel hervat'); };
+  $('#bSound').onclick=()=>{ S.settings.sound=!S.settings.sound; renderTop(); sfx('coin'); save(); };
+  $('#bTheme').innerHTML=icon('theme'); $('#bTheme').setAttribute('aria-label','Wissel thema'); $('#bTheme').onclick=toggleTheme;
+  $('#bRules').innerHTML=icon('help'); $('#bRules').setAttribute('aria-label','Spelregels'); $('#bRules').onclick=openRules;
+  $('#bMenu').innerHTML=icon('menu'); $('#bMenu').setAttribute('aria-label','Menu'); $('#bMenu').onclick=openMenu;
+  let rt; window.addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(sizeBoard,80); });
+  setInterval(()=>{ if(S&&!S.over&&!$('#game').hidden&&!UI.paused&&document.visibilityState!=='hidden'){ S.elapsedMs+=1000; renderTimer(); } },1000);
+}
+function boot(data){
+  applyTheme(); initModals(); initGameUI(); initSetupEvents();
+  if(data&&data.save){ try{ const s=JSON.parse(data.save); if(s&&!s.over){ resumeGame(s); return; } }catch(e){} }
+  renderSetup();
+}
+window.__stratenspel={get S(){return S;},UI,setup,render};
+try{ if(window.claude&&window.claude.hot&&window.claude.hot.snapshot) window.claude.hot.snapshot(()=>({save:UI.lastSave||null})); }catch(e){}
+const hot=window.claude&&window.claude.hot;
+if(hot&&hot.ready) hot.ready(boot); else boot((hot&&hot.data)||{});
+})();
+</script>
+</body>
+</html>
